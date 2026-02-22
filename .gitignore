@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.env
+uploads/
+public/profiles/
+public/pujas/

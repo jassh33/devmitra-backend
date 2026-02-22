@@ -132,7 +132,7 @@ export const buildAdminRouter = () => {
 
                 if (!admin) return null;
 
-                if (password === 'admin123') {
+                if (password === process.env.ADMIN_PASSWORD) {
                     return admin;
                 }
 

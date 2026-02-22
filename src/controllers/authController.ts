@@ -54,7 +54,7 @@ export const sendOtp = async (req: Request, res: Response) => {
                 To: formattedPhone,
                 TemplateName: "devmitra",
                 VAR1: otp,
-                VAR2: appHash || "",
+                VAR2: process.env.ANDROID_APP_HASH,
             }
         );
 

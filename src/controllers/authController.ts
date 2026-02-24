@@ -14,6 +14,14 @@ const generateToken = (user: any) => {
     );
 };
 
+const generateRefreshToken = (user: any) => {
+    return jwt.sign(
+        { id: user._id },
+        process.env.JWT_REFRESH_SECRET as string,
+        { expiresIn: '30d' }
+    );
+};
+
 const USE_STATIC_OTP = process.env.USE_STATIC_OTP === 'true';
 const STATIC_OTP = process.env.STATIC_OTP || '123456';
 
@@ -204,5 +212,106 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
     } catch (error) {
         res.status(500).json({ message: 'Error verifying OTP' });
+    }
+};
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login with phone and OTP
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *               - otp
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "9876543210"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Login successful
+ */
+export const login = async (req: Request, res: Response) => {
+    try {
+        const { phone, otp } = req.body;
+
+        const formattedPhone =
+            phone.startsWith('91') ? phone : `91${phone}`;
+
+        const user = await User.findOne({ phone: formattedPhone });
+
+        if (!user) {
+            return res.status(404).json({
+                status: 404,
+                type: "error",
+                title: "User Not Found",
+                detail: "User does not exist",
+                instance: "/api/auth/login",
+            });
+        }
+
+        if (
+            user.otp !== otp ||
+            !user.otpExpiry ||
+            user.otpExpiry < new Date()
+        ) {
+            return res.status(400).json({
+                status: 400,
+                type: "error",
+                title: "Invalid OTP",
+                detail: "Invalid or expired OTP",
+                instance: "/api/auth/login",
+            });
+        }
+
+        user.otp = null as any;
+        user.otpExpiry = null as any;
+        await user.save();
+
+        const accessToken = generateToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        res.json({
+            status: 200,
+            type: "success",
+            title: "Login Successful",
+            detail: "User authenticated successfully",
+            instance: "/api/auth/login",
+            tokens: {
+                access: accessToken,
+                refresh: refreshToken,
+                user: {
+                    username: user.phone,
+                    email: user.email || "",
+                    first_name: user.firstName,
+                    last_name: user.lastName,
+                    mobile_number: user.phone,
+                    user_type: user.role,
+                    is_verified: user.isApproved,
+                    is_active: !user.isBlocked,
+                    state: user.city || "",
+                    city: user.city || "",
+                },
+            },
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            status: 500,
+            type: "error",
+            title: "Server Error",
+            detail: "Something went wrong",
+            instance: "/api/auth/login",
+        });
     }
 };

@@ -1,5 +1,6 @@
 import express from 'express';
 import { sendOtp, verifyOtp } from '../controllers/authController';
+import { login } from '../controllers/authController';
 
 const router = express.Router();
 
@@ -27,5 +28,15 @@ router.post('/send-otp', sendOtp);
  *     tags: [Auth]
  */
 router.post('/verify-otp', verifyOtp);
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login
+ *     tags: [Auth]
+ */
+
+router.post('/login', login);
 
 export default router;

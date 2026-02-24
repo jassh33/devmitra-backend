@@ -33,9 +33,9 @@ app.use('/api/vendors', vendorRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use(adminJs.options.rootPath, adminRouter);
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use(adminJs.options.rootPath, adminRouter);
 
 app.get('/', (req, res) => {
     res.json({ message: 'Dev Mitra Backend Running 🚀' });

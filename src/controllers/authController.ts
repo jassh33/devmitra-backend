@@ -14,22 +14,68 @@ const generateToken = (user: any) => {
     );
 };
 
+const USE_STATIC_OTP = process.env.USE_STATIC_OTP === 'true';
+const STATIC_OTP = process.env.STATIC_OTP || '123456';
+
 /**
- * SEND OTP
+ * @swagger
+ * tags:
+ *   name: Authentication
+ *   description: OTP based authentication APIs
+ */
+
+/**
+ * @swagger
+ * /api/auth/send-otp:
+ *   post:
+ *     summary: Send OTP to user's phone number
+ *     tags: [Authentication]
+ *     description: |
+ *       Sends an OTP to the provided phone number.
+ *       In staging mode (USE_STATIC_OTP=true), a static OTP is used.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "9876543210"
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 devOtp:
+ *                   type: string
+ *                   description: Present only when static OTP mode is enabled
+ *       400:
+ *         description: Phone number is required
+ *       500:
+ *         description: Error sending OTP
  */
 export const sendOtp = async (req: Request, res: Response) => {
     try {
-        const { phone, appHash } = req.body;
+        const { phone } = req.body;
 
         if (!phone) {
             return res.status(400).json({ message: 'Phone is required' });
         }
 
-        // Ensure Indian country code
         const formattedPhone =
             phone.startsWith('91') ? phone : `91${phone}`;
 
-        const otp = generateOTP();
+        const otp = USE_STATIC_OTP ? STATIC_OTP : generateOTP();
+
         const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
         let user = await User.findOne({ phone: formattedPhone });
@@ -47,41 +93,90 @@ export const sendOtp = async (req: Request, res: Response) => {
         user.otpExpiry = otpExpiry;
         await user.save();
 
-        const response = await axios.post(
-            `https://2factor.in/API/V1/${process.env.TWO_FACTOR_API_KEY}/ADDON_SERVICES/SEND/TSMS`,
-            {
-                From: "DEVMIT",
-                To: formattedPhone,
-                TemplateName: "devmitra",
-                VAR1: otp,
-                VAR2: process.env.ANDROID_APP_HASH,
-            }
-        );
+        /**
+         * TODO:
+         * Enable real SMS integration when USE_STATIC_OTP=false
+         */
+        if (!USE_STATIC_OTP) {
+            await axios.post(
+                `https://2factor.in/API/V1/${process.env.TWO_FACTOR_API_KEY}/ADDON_SERVICES/SEND/TSMS`,
+                {
+                    From: 'DEVMIT',
+                    To: formattedPhone,
+                    TemplateName: 'devmitra',
+                    VAR1: otp,
+                    VAR2: process.env.ANDROID_APP_HASH,
+                }
+            );
+        } else {
+            console.log(`Static OTP for ${formattedPhone}: ${otp}`);
+        }
 
-        console.log("2Factor Response:", response.data);
-
-        res.json({ message: 'OTP sent successfully' });
+        res.json({
+            message: 'OTP sent successfully',
+            ...(USE_STATIC_OTP && { devOtp: STATIC_OTP }),
+        });
 
     } catch (error: any) {
-        console.error(
-            "2Factor Error:",
-            error?.response?.data || error.message
-        );
-
         res.status(500).json({
             message: 'Error sending OTP',
             error: error?.response?.data || error.message,
         });
     }
 };
+
 /**
- * VERIFY OTP
+ * @swagger
+ * /api/auth/verify-otp:
+ *   post:
+ *     summary: Verify OTP and login user
+ *     tags: [Authentication]
+ *     description: Verifies OTP and returns JWT token on success.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *               - otp
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "9876543210"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *       400:
+ *         description: Invalid or expired OTP
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Error verifying OTP
  */
 export const verifyOtp = async (req: Request, res: Response) => {
     try {
         const { phone, otp } = req.body;
 
-        const user = await User.findOne({ phone });
+        const formattedPhone =
+            phone.startsWith('91') ? phone : `91${phone}`;
+
+        const user = await User.findOne({ phone: formattedPhone });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -95,8 +190,8 @@ export const verifyOtp = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
-        user.otp = null;
-        user.otpExpiry = null;
+        user.otp = null as any;
+        user.otpExpiry = null as any;
         await user.save();
 
         const token = generateToken(user);
@@ -106,6 +201,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
             token,
             user,
         });
+
     } catch (error) {
         res.status(500).json({ message: 'Error verifying OTP' });
     }

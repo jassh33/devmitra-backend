@@ -1,7 +1,67 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 
-// Create Vendor
+/**
+ * @swagger
+ * tags:
+ *   name: Vendors
+ *   description: Vendor management APIs
+ */
+
+/**
+ * @swagger
+ * /api/vendors:
+ *   post:
+ *     summary: Create a new Vendor
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - phone
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "Ramesh"
+ *               lastName:
+ *                 type: string
+ *                 example: "Sharma"
+ *               phone:
+ *                 type: string
+ *                 example: "919876543210"
+ *               city:
+ *                 type: string
+ *                 example: "Hyderabad"
+ *               poojariCategory:
+ *                 type: string
+ *                 example: "Vedic Pandit"
+ *               languages:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["Telugu", "Hindi"]
+ *               studyPlace:
+ *                 type: string
+ *                 example: "Tirupati"
+ *               experience:
+ *                 type: number
+ *                 example: 10
+ *               profileImage:
+ *                 type: string
+ *                 example: "/public/profiles/12345.jpg"
+ *     responses:
+ *       201:
+ *         description: Vendor created successfully
+ *       500:
+ *         description: Error creating vendor
+ */
 export const createVendor = async (req: Request, res: Response) => {
     try {
         const vendor = await User.create({
@@ -15,7 +75,18 @@ export const createVendor = async (req: Request, res: Response) => {
     }
 };
 
-// Get All Vendors
+/**
+ * @swagger
+ * /api/vendors:
+ *   get:
+ *     summary: Get all vendors
+ *     tags: [Vendors]
+ *     responses:
+ *       200:
+ *         description: List of vendors
+ *       500:
+ *         description: Error fetching vendors
+ */
 export const getVendors = async (req: Request, res: Response) => {
     try {
         const vendors = await User.find({ role: 'vendor' });
@@ -25,7 +96,26 @@ export const getVendors = async (req: Request, res: Response) => {
     }
 };
 
-// Approve Vendor
+/**
+ * @swagger
+ * /api/vendors/{id}/approve:
+ *   patch:
+ *     summary: Approve a vendor (Admin only)
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Vendor approved successfully
+ *       500:
+ *         description: Error approving vendor
+ */
 export const approveVendor = async (req: Request, res: Response) => {
     try {
         const vendor = await User.findByIdAndUpdate(
@@ -40,7 +130,26 @@ export const approveVendor = async (req: Request, res: Response) => {
     }
 };
 
-// Block Vendor
+/**
+ * @swagger
+ * /api/vendors/{id}/block:
+ *   patch:
+ *     summary: Block a vendor (Admin only)
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Vendor blocked successfully
+ *       500:
+ *         description: Error blocking vendor
+ */
 export const blockVendor = async (req: Request, res: Response) => {
     try {
         const vendor = await User.findByIdAndUpdate(

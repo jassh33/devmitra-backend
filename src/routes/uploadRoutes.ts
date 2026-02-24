@@ -18,7 +18,30 @@ const router = express.Router();
  */
 
 /**
- * Upload Profile Picture (Customer or Vendor)
+ * @swagger
+ * /api/upload/profile:
+ *   post:
+ *     summary: Upload profile image (Customer or Vendor)
+ *     tags: [Upload]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *       400:
+ *         description: No file uploaded
  */
 router.post(
     '/profile',
@@ -36,7 +59,32 @@ router.post(
 );
 
 /**
- * Upload Puja Image (Admin only)
+ * @swagger
+ * /api/upload/puja:
+ *   post:
+ *     summary: Upload puja image (Admin only)
+ *     tags: [Upload]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Puja image uploaded successfully
+ *       400:
+ *         description: No file uploaded
+ *       403:
+ *         description: Access denied
  */
 router.post(
     '/puja',
@@ -55,7 +103,32 @@ router.post(
 );
 
 /**
- * Upload Icon (Admin only)
+ * @swagger
+ * /api/upload/icon:
+ *   post:
+ *     summary: Upload icon image (Admin only)
+ *     tags: [Upload]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Icon uploaded successfully
+ *       400:
+ *         description: No file uploaded
+ *       403:
+ *         description: Access denied
  */
 router.post(
     '/icon',

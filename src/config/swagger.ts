@@ -1,5 +1,4 @@
-import swaggerJsdoc from 'swagger-jsdoc';
-import { Options } from 'swagger-jsdoc';
+import swaggerJsdoc, { Options } from 'swagger-jsdoc';
 
 const options: Options = {
     definition: {
@@ -11,11 +10,20 @@ const options: Options = {
         },
         servers: [
             {
-                url: 'http://localhost:5000',
+                url: process.env.BASE_URL || 'http://localhost:5000',
             },
         ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                },
+            },
+        },
     },
-    apis: ['./src/routes/*.ts'], // scan routes for swagger comments
+    apis: ['src/routes/*.ts', 'src/controllers/*.ts'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

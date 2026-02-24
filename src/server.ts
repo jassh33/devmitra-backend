@@ -36,7 +36,7 @@ const swaggerOptions: swaggerJsdoc.Options = {
             },
         },
     },
-    apis: ['src/routes/*.ts'], // Only scan routes
+    apis: ['src/routes/*.ts','src/controllers/*.ts'], // Only scan routes
 };
 
 const specs = swaggerJsdoc(swaggerOptions);

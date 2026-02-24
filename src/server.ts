@@ -1,7 +1,7 @@
 import app from './app';
 import connectDB from './config/db';
 import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
+//import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerSpec from './config/swagger';
 import { Request, Response } from 'express';
 
@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
  * Swagger Configuration
  * ---------------------------
  */
-const swaggerOptions: swaggerJsdoc.Options = {
+/* const swaggerOptions: swaggerJsdoc.Options = {
     definition: {
         openapi: '3.0.0',
         info: {
@@ -37,9 +37,9 @@ const swaggerOptions: swaggerJsdoc.Options = {
         },
     },
     apis: ['src/routes/*.ts','src/controllers/*.ts'], // Only scan routes
-};
+}; */
 
-const specs = swaggerJsdoc(swaggerOptions);
+//const specs = swaggerJsdoc(swaggerOptions);
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

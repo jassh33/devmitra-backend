@@ -2,6 +2,7 @@ import app from './app';
 import connectDB from './config/db';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerSpec from './config/swagger';
 import { Request, Response } from 'express';
 
 const PORT = process.env.PORT || 5000;
@@ -41,7 +42,7 @@ const swaggerOptions: swaggerJsdoc.Options = {
 const specs = swaggerJsdoc(swaggerOptions);
 
 // Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
  * @swagger

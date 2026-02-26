@@ -89,12 +89,7 @@ export const sendOtp = async (req: Request, res: Response) => {
         let user = await User.findOne({ phone: formattedPhone });
 
         if (!user) {
-            user = await User.create({
-                phone: formattedPhone,
-                firstName: 'New',
-                lastName: 'User',
-                role: 'customer',
-            });
+            return res.status(404).json({ message: 'phone number not registered' });
         }
 
         user.otp = otp;

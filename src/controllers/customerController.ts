@@ -73,8 +73,13 @@ export const createCustomer = async (req: Request, res: Response) => {
         });
 
         res.status(201).json(customer);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating customer' });
+    } catch (error: any) {
+        console.error("Create Customer Error:", error);
+
+        res.status(500).json({
+            message: error?.message || "Server error",
+            stack: error?.stack,
+        });
     }
 };
 

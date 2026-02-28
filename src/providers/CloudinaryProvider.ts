@@ -15,15 +15,17 @@ class CloudinaryProvider extends BaseProvider {
                 resource_type: 'auto',
             });
 
-            return response.secure_url;
+            // remove temp file
+            if (fs.existsSync(file.path)) {
+                fs.unlinkSync(file.path)
+            }
+
+            // IMPORTANT: return public_id (not full URL)
+            return response.public_id;
 
         } catch (error: any) {
             console.error("Cloudinary Upload Error:", error);
-
-            // IMPORTANT: Throw readable message
-            throw new Error(
-                error?.message || "Cloudinary upload failed"
-            );
+            throw new Error(error?.message || "Cloudinary upload failed");
         }
     }
 
@@ -32,13 +34,16 @@ class CloudinaryProvider extends BaseProvider {
             await cloudinary.uploader.destroy(key, {
                 resource_type: 'auto',
             });
-        } catch (error: any) {
+        } catch (error) {
             console.error("Cloudinary Delete Error:", error);
         }
     }
 
+    // 🔥 THIS IS THE IMPORTANT PART
     path(key: string): string {
-        return key
+        return cloudinary.url(key, {
+            secure: true,
+        });
     }
 }
 

@@ -9,36 +9,39 @@ class CloudinaryProvider extends BaseProvider {
 
     async upload(file: any, key: string): Promise<string> {
         try {
-            const publicId = `${this.bucket}/${key}`;
-
             const response = await cloudinary.uploader.upload(file.path, {
-                public_id: publicId,
-                resource_type: "image",   // 👈 force image for SVG
-            });
+                folder: this.bucket,        // ✅ Let Cloudinary handle folder
+                public_id: key,             // ✅ Keep key clean (home/xxx.svg)
+                resource_type: "auto",      // ✅ Works for image + svg + pdf
+            })
 
-            return response.public_id;
+            // optional: remove temp file
+            if (fs.existsSync(file.path)) {
+                fs.unlinkSync(file.path)
+            }
+
+            return response.public_id    // will now include folder automatically
 
         } catch (error: any) {
-            console.error("Cloudinary Upload Error:", error);
-            throw new Error(error?.message || "Cloudinary upload failed");
+            console.error("Cloudinary Upload Error:", error)
+            throw new Error(error?.message || "Cloudinary upload failed")
         }
     }
 
     async delete(key: string): Promise<void> {
         try {
             await cloudinary.uploader.destroy(key, {
-                resource_type: 'auto',
-            });
+                resource_type: "auto",
+            })
         } catch (error) {
-            console.error("Cloudinary Delete Error:", error);
+            console.error("Cloudinary Delete Error:", error)
         }
     }
 
-    // 🔥 THIS IS THE IMPORTANT PART
     path(key: string): string {
         return cloudinary.url(key, {
             secure: true,
-        });
+        })
     }
 }
 

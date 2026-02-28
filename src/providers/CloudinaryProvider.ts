@@ -9,18 +9,13 @@ class CloudinaryProvider extends BaseProvider {
 
     async upload(file: any, key: string): Promise<string> {
         try {
+            const publicId = `${this.bucket}/${key}`;
+
             const response = await cloudinary.uploader.upload(file.path, {
-                folder: this.bucket,
-                public_id: key,
-                resource_type: 'auto',
+                public_id: publicId,
+                resource_type: "image",   // 👈 force image for SVG
             });
 
-            // remove temp file
-            if (fs.existsSync(file.path)) {
-                fs.unlinkSync(file.path)
-            }
-
-            // IMPORTANT: return public_id (not full URL)
             return response.public_id;
 
         } catch (error: any) {

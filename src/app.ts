@@ -14,6 +14,7 @@ import adminJs, { buildAdminRouter } from './admin/admin';
 import authRoutes from './routes/authRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import homeRoutes from './routes/homeRoutes';
+import customerRoutes from './routes/customerRoutes';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/home', homeRoutes);
+app.use('/api/customers', customerRoutes);
 app.use(adminJs.options.rootPath, adminRouter);
 
 app.get('/', (req, res) => {

@@ -5,6 +5,7 @@ export interface IHomeCard extends Document {
     description: string;
     buttonText: string;
     image: string;
+    cardColor: string;
     isActive: boolean;
 }
 
@@ -14,6 +15,7 @@ const HomeCardSchema = new Schema<IHomeCard>(
         description: { type: String, required: true },
         buttonText: { type: String, required: true },
         image: { type: String, required: true },
+        cardColor: { type: String, required: true },
         isActive: { type: Boolean, default: true },
     },
     { timestamps: true }

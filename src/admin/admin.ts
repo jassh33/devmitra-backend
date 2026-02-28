@@ -116,12 +116,37 @@ const adminJs = new AdminJS({
             resource: HomeCard,
             options: {
                 navigation: { name: 'Content Management', icon: 'Home' },
-                listProperties: ['title', 'buttonText', 'isActive'],
+
+                listProperties: [
+                    'title',
+                    'image',
+                    'cardColor',
+                    'isActive',
+                ],
+
+                showProperties: [
+                    'title',
+                    'description',
+                    'buttonText',
+                    'image',
+                    'cardColor',
+                    'isActive',
+                    'createdAt',
+                ],
+
+                editProperties: [
+                    'title',
+                    'description',
+                    'buttonText',
+                    'image',
+                    'cardColor',
+                    'isActive',
+                ],
+
                 properties: {
-                    image: { type: 'string' },
                     __v: { isVisible: false },
                 },
-            },
+            }
         }
     ],
 

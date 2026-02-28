@@ -12,10 +12,7 @@ const router = express.Router();
  * Create Customer (Admin only)
  */
 router.post(
-    '/',
-    protect,
-    authorizeRoles('admin'),
-    createCustomer
+    '/', createCustomer
 );
 
 /**
@@ -23,8 +20,6 @@ router.post(
  */
 router.get(
     '/',
-    protect,
-    authorizeRoles('admin'),
     getCustomers
 );
 

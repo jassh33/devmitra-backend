@@ -11,7 +11,7 @@ import User from '../models/User';
 
 /**
  * @swagger
- * /api/vendors:
+ * /api/customers:
  *   post:
  *     summary: Create a new Customer
  *     tags: [Customers]

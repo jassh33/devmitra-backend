@@ -76,14 +76,7 @@ const adminJs = new AdminJS({
             },
             features: [
                 uploadFeature({
-                    provider: {
-                        local: {
-                            bucket: path.join(__dirname, '../../public'),
-                            opts: {
-                                baseUrl: undefined
-                            }
-                        },
-                    },
+                    provider: new CloudinaryProvider('dev_mitra_uploads'),
                     properties: {
                         key: 'image',
                         file: 'uploadPujaImage',
@@ -159,15 +152,7 @@ const adminJs = new AdminJS({
 
             features: [
                 uploadFeature({
-                    provider: {
-                        local: {
-                            bucket: path.join(process.cwd(), 'public/home'),
-                            opts: {
-                                baseUrl: '/public/home'
-                            }
-                        },
-                    },
-
+                    provider: new CloudinaryProvider('dev_mitra_uploads'),
                     properties: {
                         key: 'image',        // stored in DB
                         file: 'uploadImage', // virtual field for file picker

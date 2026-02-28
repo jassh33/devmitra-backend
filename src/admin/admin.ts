@@ -10,6 +10,7 @@ import VendorPuja from '../models/VendorPuja';
 import Availability from '../models/Availability';
 import Booking from '../models/Booking';
 import Payment from '../models/Payment';
+import HomeCard from '../models/HomeCard';
 
 AdminJS.registerAdapter({
     Resource: AdminJSMongoose.Resource,
@@ -111,6 +112,17 @@ const adminJs = new AdminJS({
                 navigation: { name: 'Finance', icon: 'CreditCard' },
             },
         },
+        {
+            resource: HomeCard,
+            options: {
+                navigation: { name: 'Content Management', icon: 'Home' },
+                listProperties: ['title', 'buttonText', 'isActive'],
+                properties: {
+                    image: { type: 'string' },
+                    __v: { isVisible: false },
+                },
+            },
+        }
     ],
 
     rootPath: '/admin',

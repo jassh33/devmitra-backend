@@ -238,6 +238,8 @@ export const verifyOtp = async (req: Request, res: Response) => {
  */
 export const login = async (req: Request, res: Response) => {
     try {
+        const BASE_URL =
+            process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
         const { phone, otp } = req.body;
 
         const formattedPhone =
@@ -296,6 +298,9 @@ export const login = async (req: Request, res: Response) => {
                     is_active: !user.isBlocked,
                     state: user.city || "",
                     city: user.city || "",
+                    profile_image: user.profileImage
+                        ? `${BASE_URL}${user.profileImage}`
+                        : null,
                 },
             },
         });

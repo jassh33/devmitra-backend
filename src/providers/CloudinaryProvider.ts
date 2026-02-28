@@ -20,7 +20,7 @@ class CloudinaryProvider extends BaseProvider {
                 fs.unlinkSync(file.path)
             }
 
-            return response.public_id    // will now include folder automatically
+            return response.secure_url.split('?')[0]; // will now include folder automatically
 
         } catch (error: any) {
             console.error("Cloudinary Upload Error:", error)
@@ -41,6 +41,7 @@ class CloudinaryProvider extends BaseProvider {
     path(key: string): string {
         return cloudinary.url(key, {
             secure: true,
+            analytics: false,
         })
     }
 }

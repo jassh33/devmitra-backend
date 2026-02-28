@@ -3,6 +3,8 @@ import AdminJSExpress from '@adminjs/express';
 import * as AdminJSMongoose from '@adminjs/mongoose';
 import uploadFeature from '@adminjs/upload';
 import path from 'path';
+import { v2 as cloudinary } from "cloudinary"
+import CloudinaryProvider from '../providers/CloudinaryProvider'
 
 import User from '../models/User';
 import PujaType from '../models/PujaType';
@@ -16,6 +18,20 @@ AdminJS.registerAdapter({
     Resource: AdminJSMongoose.Resource,
     Database: AdminJSMongoose.Database,
 });
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+    api_key: process.env.CLOUDINARY_API_KEY!,
+    api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
+
+const upload = uploadFeature({
+    provider: new CloudinaryProvider('dev_mitra_uploads'),
+    properties: {
+        key: 'image',
+        file: 'uploadImage',
+    },
+})
 
 const adminJs = new AdminJS({
     resources: [
@@ -34,14 +50,7 @@ const adminJs = new AdminJS({
             },
             features: [
                 uploadFeature({
-                    provider: {
-                        local: {
-                            bucket: path.join(__dirname, '../../public'),
-                            opts: {
-                                baseUrl: undefined
-                            }
-                        },
-                    },
+                    provider: new CloudinaryProvider('dev_mitra_uploads'),
                     properties: {
                         key: 'profileImage',  // DB field
                         file: 'uploadProfile', // virtual admin field

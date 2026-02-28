@@ -146,9 +146,31 @@ const adminJs = new AdminJS({
                 properties: {
                     __v: { isVisible: false },
                 },
-            }
-        }
-    ],
+            },
+
+            features: [
+                uploadFeature({
+                    provider: {
+                        local: {
+                            bucket: path.join(process.cwd(), 'public/home'),
+                            opts: {
+                                baseUrl: '/public/home'
+                            }
+                        },
+                    },
+
+                    properties: {
+                        key: 'image',        // stored in DB
+                        file: 'uploadImage', // virtual field for file picker
+                    },
+
+                    uploadPath: (record, filename) =>
+                        `home/${Date.now()}-${filename}`,
+                }),
+            ],
+        },
+            ],
+
 
     rootPath: '/admin',
 

@@ -2,7 +2,7 @@ import express from 'express';
 import {
     uploadProfile,
     uploadPuja,
-    uploadIcon,
+    uploadIcon, uploadHomeCard,
 } from '../middleware/uploadMiddleware';
 
 import { protect } from '../middleware/authMiddleware';
@@ -54,6 +54,22 @@ router.post(
 
         res.json({
             imageUrl: `/public/profiles/${req.file.filename}`,
+        });
+    }
+);
+
+router.post(
+    '/home-card',
+    protect,
+    authorizeRoles('admin'),
+    uploadHomeCard.single('image'),
+    (req, res) => {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        res.json({
+            imageUrl: `/public/home/${req.file.filename}`,
         });
     }
 );

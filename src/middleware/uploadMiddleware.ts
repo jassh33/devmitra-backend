@@ -39,3 +39,4 @@ const createUploader = (folder: string) => {
 export const uploadProfile = createUploader('profiles');
 export const uploadPuja = createUploader('pujas');
 export const uploadIcon = createUploader('icons');
+export const uploadHomeCard = createUploader('home');

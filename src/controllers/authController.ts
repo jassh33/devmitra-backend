@@ -288,7 +288,7 @@ export const login = async (req: Request, res: Response) => {
                 access: accessToken,
                 refresh: refreshToken,
                 user: {
-                    username: user.firstName + user.lastName,
+                    username: user.firstName + " " + user.lastName,
                     email: user.email || "",
                     first_name: user.firstName,
                     last_name: user.lastName,

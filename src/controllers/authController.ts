@@ -306,11 +306,12 @@ export const login = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             status: 500,
             type: "error",
             title: "Server Error",
-            detail: "Something went wrong",
+            detail: error,
             instance: "/api/auth/login",
         });
     }

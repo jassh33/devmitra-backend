@@ -57,6 +57,9 @@ const adminJs = new AdminJS({
                     },
                     uploadPath: (record, filename) =>
                         `dev_mitra_uploads/profiles/${Date.now()}-${filename}`,
+                    validation: {
+                        mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
+                    },
                 }),
             ],
         },
@@ -83,6 +86,9 @@ const adminJs = new AdminJS({
                     },
                     uploadPath: (record, filename) =>
                         `dev_mitra_uploads/pujas/${Date.now()}-${filename}`,
+                    validation: {
+                        mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
+                    },
                 }),
             ],
         },
@@ -160,6 +166,9 @@ const adminJs = new AdminJS({
 
                     uploadPath: (record, filename) =>
                         `dev_mitra_uploads/home/${Date.now()}-${filename}`,
+                    validation: {
+                        mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
+                    },
                 }),
             ],
         },

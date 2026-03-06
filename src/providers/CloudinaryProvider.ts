@@ -26,7 +26,7 @@ class CloudinaryProvider extends BaseProvider {
                 fs.unlinkSync(file.path)
             }
 
-            return `${this.bucket}/${response.public_id}`
+            return response.public_id
 
         } catch (error: any) {
             console.error("Cloudinary Upload Error:", error)
@@ -36,7 +36,7 @@ class CloudinaryProvider extends BaseProvider {
 
     async delete(key: string): Promise<void> {
         try {
-            await cloudinary.uploader.destroy(key, {
+            await cloudinary.uploader.destroy(`${this.bucket}/${key}`, {
                 resource_type: "auto",
             })
         } catch (error) {
@@ -45,7 +45,7 @@ class CloudinaryProvider extends BaseProvider {
     }
 
     path(key: string): string {
-        return cloudinary.url(key, {
+        return cloudinary.url(`${this.bucket}/${key}`, {
             secure: true,
             analytics: false,
         })

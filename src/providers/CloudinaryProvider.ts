@@ -19,7 +19,7 @@ class CloudinaryProvider extends BaseProvider {
             const response = await cloudinary.uploader.upload(file.path, {
                 folder: this.bucket,
                 public_id: key,
-                resource_type: "auto",
+                resource_type: "image",
             })
 
             if (fs.existsSync(file.path)) {
@@ -37,7 +37,7 @@ class CloudinaryProvider extends BaseProvider {
     async delete(key: string): Promise<void> {
         try {
             await cloudinary.uploader.destroy(`${this.bucket}/${key}`, {
-                resource_type: "auto",
+                resource_type: "image",
             })
         } catch (error) {
             console.error("Cloudinary Delete Error:", error)
@@ -45,9 +45,12 @@ class CloudinaryProvider extends BaseProvider {
     }
 
     path(key: string): string {
+        const isSvg = key.endsWith('.svg');
         return cloudinary.url(`${this.bucket}/${key}`, {
             secure: true,
             analytics: false,
+            // Add the sanitize flag ONLY for SVGs
+            ...(isSvg && { flags: 'sanitize' })
         })
     }
 }

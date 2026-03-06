@@ -6,7 +6,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "NODE_OPTIONS=--max-old-space-size=2048 tsc",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "git pull && npm install && NODE_OPTIONS='--max-old-space-size=2048' npm run build && pm2 restart devmitra"
   },
   "keywords": [],
   "author": "",

@@ -2,6 +2,13 @@ import { BaseProvider } from '@adminjs/upload'
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
 
+// 🔧 Configure Cloudinary using environment variables
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
 class CloudinaryProvider extends BaseProvider {
     constructor(bucket: string) {
         super(bucket)
@@ -10,17 +17,16 @@ class CloudinaryProvider extends BaseProvider {
     async upload(file: any, key: string): Promise<string> {
         try {
             const response = await cloudinary.uploader.upload(file.path, {
-                folder: this.bucket,        // ✅ Let Cloudinary handle folder
-                public_id: key,             // ✅ Keep key clean (home/xxx.svg)
-                resource_type: "auto",      // ✅ Works for image + svg + pdf
+                folder: this.bucket,
+                public_id: key,
+                resource_type: "auto",
             })
 
-            // optional: remove temp file
             if (fs.existsSync(file.path)) {
                 fs.unlinkSync(file.path)
             }
 
-            return `${this.bucket}/${response.public_id}`; // will now include folder automatically
+            return `${this.bucket}/${response.public_id}`
 
         } catch (error: any) {
             console.error("Cloudinary Upload Error:", error)

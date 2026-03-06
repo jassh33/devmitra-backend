@@ -2,7 +2,6 @@ import { BaseProvider } from '@adminjs/upload'
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
 
-// 🔧 Configure Cloudinary using environment variables
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -16,8 +15,11 @@ class CloudinaryProvider extends BaseProvider {
 
     async upload(file: any, key: string): Promise<string> {
         try {
+            const publicId = key.split('.').slice(0, -1).join('.')
+
             const response = await cloudinary.uploader.upload(file.path, {
-                public_id: key,
+                public_id: publicId,
+                folder: this.bucket,
                 resource_type: "image",
             })
 
@@ -26,7 +28,6 @@ class CloudinaryProvider extends BaseProvider {
             }
 
             return response.public_id
-
         } catch (error: any) {
             console.error("Cloudinary Upload Error:", error)
             throw new Error(error?.message || "Cloudinary upload failed")
@@ -44,12 +45,11 @@ class CloudinaryProvider extends BaseProvider {
     }
 
     path(key: string): string {
-        const isSvg = key.endsWith('.svg');
         return cloudinary.url(key, {
             secure: true,
             analytics: false,
-            // Add the sanitize flag ONLY for SVGs
-            ...(isSvg && { flags: 'sanitize' })
+            format: "svg",   // ensures correct extension
+            flags: "sanitize",
         })
     }
 }

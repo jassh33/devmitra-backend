@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger';
 import path from 'path';
@@ -15,8 +15,6 @@ import authRoutes from './routes/authRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import homeRoutes from './routes/homeRoutes';
 import customerRoutes from './routes/customerRoutes';
-
-dotenv.config();
 
 const app = express();
 const adminRouter = buildAdminRouter();

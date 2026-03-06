@@ -17,7 +17,7 @@ class CloudinaryProvider extends BaseProvider {
         try {
             const response = await cloudinary.uploader.upload(file.path, {
                 public_id: key,
-                resource_type: "image",
+                resource_type: "auto",
             })
 
             if (fs.existsSync(file.path)) {
@@ -34,7 +34,7 @@ class CloudinaryProvider extends BaseProvider {
     async delete(key: string): Promise<void> {
         try {
             await cloudinary.uploader.destroy(key, {
-                resource_type: "image",
+                resource_type: "auto",
             })
         } catch (error) {
             console.error("Cloudinary Delete Error:", error)

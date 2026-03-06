@@ -42,9 +42,11 @@ class CloudinaryProvider extends BaseProvider {
     }
 
     path(key: string): string {
+        const isSvg = key.endsWith('.svg');
         return cloudinary.url(key, {
             secure: true,
             analytics: false,
+            ...(isSvg && { flags: 'sanitize' })
         })
     }
 }

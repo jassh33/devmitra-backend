@@ -45,10 +45,12 @@ class CloudinaryProvider extends BaseProvider {
     }
 
     path(key: string): string {
-        return cloudinary.url(key, {
+        const cleanKey = key.replace(/\.svg$/, '')
+        return cloudinary.url(cleanKey, {
             secure: true,
             analytics: false,
-            flags: "sanitize",
+            flags: 'sanitize',
+            format: 'svg'
         })
     }
 }

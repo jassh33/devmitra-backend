@@ -17,7 +17,6 @@ class CloudinaryProvider extends BaseProvider {
     async upload(file: any, key: string): Promise<string> {
         try {
             const response = await cloudinary.uploader.upload(file.path, {
-                folder: this.bucket,
                 public_id: key,
                 resource_type: "image",
             })
@@ -36,7 +35,7 @@ class CloudinaryProvider extends BaseProvider {
 
     async delete(key: string): Promise<void> {
         try {
-            await cloudinary.uploader.destroy(`${this.bucket}/${key}`, {
+            await cloudinary.uploader.destroy(key, {
                 resource_type: "image",
             })
         } catch (error) {
@@ -46,7 +45,7 @@ class CloudinaryProvider extends BaseProvider {
 
     path(key: string): string {
         const isSvg = key.endsWith('.svg');
-        return cloudinary.url(`${this.bucket}/${key}`, {
+        return cloudinary.url(key, {
             secure: true,
             analytics: false,
             // Add the sanitize flag ONLY for SVGs

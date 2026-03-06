@@ -56,7 +56,7 @@ const adminJs = new AdminJS({
                         file: 'uploadProfile', // virtual admin field
                     },
                     uploadPath: (record, filename) =>
-                        `profiles/${Date.now()}-${filename}`,
+                        `dev_mitra_uploads/profiles/${Date.now()}-${filename}`,
                 }),
             ],
         },
@@ -82,7 +82,7 @@ const adminJs = new AdminJS({
                         file: 'uploadPujaImage',
                     },
                     uploadPath: (record, filename) =>
-                        `pujas/${Date.now()}-${filename}`,
+                        `dev_mitra_uploads/pujas/${Date.now()}-${filename}`,
                 }),
             ],
         },
@@ -159,7 +159,7 @@ const adminJs = new AdminJS({
                     },
 
                     uploadPath: (record, filename) =>
-                        `home/${Date.now()}-${filename}`,
+                        `dev_mitra_uploads/home/${Date.now()}-${filename}`,
                 }),
             ],
         },

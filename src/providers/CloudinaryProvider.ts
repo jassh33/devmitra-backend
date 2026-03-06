@@ -48,7 +48,6 @@ class CloudinaryProvider extends BaseProvider {
         return cloudinary.url(key, {
             secure: true,
             analytics: false,
-            format: "svg",   // ensures correct extension
             flags: "sanitize",
         })
     }

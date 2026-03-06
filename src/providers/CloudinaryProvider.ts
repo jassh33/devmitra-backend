@@ -15,11 +15,8 @@ class CloudinaryProvider extends BaseProvider {
 
     async upload(file: any, key: string): Promise<string> {
         try {
-            const publicId = key.split('.').slice(0, -1).join('.')
-
             const response = await cloudinary.uploader.upload(file.path, {
-                public_id: publicId,
-                folder: this.bucket,
+                public_id: key,
                 resource_type: "image",
             })
 
@@ -45,12 +42,9 @@ class CloudinaryProvider extends BaseProvider {
     }
 
     path(key: string): string {
-        const cleanKey = key.replace(/\.svg$/, '')
-        return cloudinary.url(cleanKey, {
+        return cloudinary.url(key, {
             secure: true,
             analytics: false,
-            flags: 'sanitize',
-            format: 'svg'
         })
     }
 }

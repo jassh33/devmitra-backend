@@ -1,10 +1,5 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware';
-import { authorizeRoles } from '../middleware/roleMiddleware';
-import {
-    createCustomer,
-    getCustomers,
-} from '../controllers/customerController';
+import { createCustomer, getCustomers } from '../controllers/customerController';
 
 const router = express.Router();
 
@@ -20,6 +15,11 @@ const router = express.Router();
  * /api/customers:
  *   post:
  *     summary: Create a new Customer
+ *     description: |
+ *       Creates a customer user record. Plain string fields for `firstName`, `lastName`, `city` etc.
+ *       are automatically translated to Hindi (hi) and Telugu (te) via Google Translate.
+ *
+ *       **Note:** Customers are created by the Admin. After creation, the customer logs in via OTP.
  *     tags: [Customers]
  *     requestBody:
  *       required: true
@@ -41,6 +41,10 @@ const router = express.Router();
  *               phone:
  *                 type: string
  *                 example: "919876543210"
+ *                 description: Full phone number with country code
+ *               email:
+ *                 type: string
+ *                 example: "ramesh@example.com"
  *               city:
  *                 type: string
  *                 example: "Hyderabad"
@@ -49,14 +53,19 @@ const router = express.Router();
  *                 items:
  *                   type: string
  *                 example: ["Telugu", "Hindi"]
- *               profileImage:
- *                 type: string
- *                 example: "/public/profiles/12345.jpg"
  *     responses:
  *       201:
  *         description: Customer created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserObject'
  *       500:
  *         description: Error creating customer
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/', createCustomer);
 
@@ -68,9 +77,19 @@ router.post('/', createCustomer);
  *     tags: [Customers]
  *     responses:
  *       200:
- *         description: List of customers
+ *         description: List of all customers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/UserObject'
  *       500:
  *         description: Error fetching customers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/', getCustomers);
 

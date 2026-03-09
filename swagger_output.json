@@ -1,0 +1,1309 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Dev Mitra API",
+    "version": "1.0.0",
+    "description": "Dev Mitra Backend API Documentation"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/send-otp": {
+      "post": {
+        "summary": "Send OTP to user's phone number",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Sends an OTP to the provided phone number.\nIn staging mode (USE_STATIC_OTP=true), a static OTP is used.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "9876543210"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "devOtp": {
+                      "type": "string",
+                      "description": "Present only when static OTP mode is enabled"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Phone number is required"
+          },
+          "500": {
+            "description": "Error sending OTP"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-otp": {
+      "post": {
+        "summary": "Verify OTP and login user",
+        "tags": [
+          "Authentication"
+        ],
+        "description": "Verifies OTP and returns JWT token on success.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone",
+                  "otp"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "9876543210"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "token": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired OTP"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Error verifying OTP"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login with phone and OTP",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone",
+                  "otp"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "9876543210"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          }
+        }
+      }
+    },
+    "/api/availability": {
+      "post": {
+        "summary": "Create availability slot (Vendor only)",
+        "tags": [
+          "Availability"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vendor",
+                  "date",
+                  "startTime",
+                  "endTime"
+                ],
+                "properties": {
+                  "vendor": {
+                    "type": "string",
+                    "example": "664af2d1234567890abc1234"
+                  },
+                  "date": {
+                    "type": "string",
+                    "example": "2026-03-10"
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "example": "09:00"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "example": "11:00"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Availability slot created successfully"
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "500": {
+            "description": "Error creating availability"
+          }
+        }
+      }
+    },
+    "/api/availability/{vendorId}": {
+      "get": {
+        "summary": "Get availability slots by vendor (Vendor only)",
+        "tags": [
+          "Availability"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Vendor ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of availability slots"
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "500": {
+            "description": "Error fetching availability"
+          }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "summary": "Create a new booking",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customer",
+                  "puja",
+                  "availability",
+                  "totalAmount"
+                ],
+                "properties": {
+                  "customer": {
+                    "type": "string"
+                  },
+                  "vendor": {
+                    "type": "string"
+                  },
+                  "puja": {
+                    "type": "string"
+                  },
+                  "availability": {
+                    "type": "string"
+                  },
+                  "totalAmount": {
+                    "type": "number"
+                  },
+                  "bookingItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "number"
+                        },
+                        "modifiedBy": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created successfully"
+          },
+          "500": {
+            "description": "Error creating booking"
+          }
+        }
+      }
+    },
+    "/api/bookings/customer/{customerId}": {
+      "get": {
+        "summary": "Get bookings by customer",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of customer bookings"
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "500": {
+            "description": "Error fetching bookings"
+          }
+        }
+      }
+    },
+    "/api/bookings/vendor/{vendorId}": {
+      "get": {
+        "summary": "Get bookings for vendor (optional status filter)",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "requested",
+                "accepted",
+                "rejected",
+                "completed",
+                "cancelled"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of vendor bookings"
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "500": {
+            "description": "Error fetching vendor bookings"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/accept": {
+      "patch": {
+        "summary": "Vendor accepts booking",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking accepted"
+          },
+          "500": {
+            "description": "Error accepting booking"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/reject": {
+      "patch": {
+        "summary": "Vendor rejects booking",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking rejected"
+          },
+          "500": {
+            "description": "Error rejecting booking"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/assign": {
+      "patch": {
+        "summary": "Admin assigns vendor to booking",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vendorId"
+                ],
+                "properties": {
+                  "vendorId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vendor assigned successfully"
+          },
+          "500": {
+            "description": "Error assigning vendor"
+          }
+        }
+      }
+    },
+    "/api/payments/simulate": {
+      "post": {
+        "summary": "Simulate payment for a booking (Customer only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "bookingId",
+                  "status"
+                ],
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "example": "664af2d1234567890abc1234"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "success",
+                      "failed"
+                    ],
+                    "example": "success"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payment processed successfully"
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "404": {
+            "description": "Booking not found"
+          },
+          "500": {
+            "description": "Error processing payment"
+          }
+        }
+      }
+    },
+    "/api/pujas": {
+      "post": {
+        "summary": "Create a new Puja",
+        "tags": [
+          "Pujas"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "displayName",
+                  "basePrice",
+                  "basePrice",
+                  "image"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Special Ganesh Puja"
+                  },
+                  "basePrice": {
+                    "type": "number",
+                    "example": 2500
+                  },
+                  "image": {
+                    "type": "string",
+                    "example": "/public/pujas/12345.jpg"
+                  },
+                  "durationMinutes": {
+                    "type": "number"
+                  },
+                  "defaultItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Coconut"
+                        },
+                        "defaultQuantity": {
+                          "type": "number"
+                        },
+                        "quantity": {
+                          "type": "number",
+                          "example": 2
+                        }
+                      }
+                    }
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "example": "Ganesh Puja"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Puja created successfully"
+          },
+          "500": {
+            "description": "Error creating puja"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Get all active pujas",
+        "tags": [
+          "Pujas"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active pujas"
+          },
+          "500": {
+            "description": "Error fetching pujas"
+          }
+        }
+      }
+    },
+    "/api/pujas/{id}": {
+      "put": {
+        "summary": "Update a puja",
+        "tags": [
+          "Pujas"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Puja updated successfully"
+          },
+          "500": {
+            "description": "Error updating puja"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Soft delete a puja",
+        "tags": [
+          "Pujas"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Puja deactivated successfully"
+          },
+          "500": {
+            "description": "Error deleting puja"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/upload/profile": {
+      "post": {
+        "summary": "Upload profile image (Customer or Vendor)",
+        "tags": [
+          "Upload"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "image"
+                ],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image uploaded successfully"
+          },
+          "400": {
+            "description": "No file uploaded"
+          }
+        }
+      }
+    },
+    "/api/upload/home-card": {
+      "post": {
+        "summary": "Upload home card image (Admin only)",
+        "tags": [
+          "Upload"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "image"
+                ],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Home card image uploaded successfully"
+          },
+          "400": {
+            "description": "No file uploaded"
+          },
+          "403": {
+            "description": "Access denied"
+          }
+        }
+      }
+    },
+    "/api/upload/puja": {
+      "post": {
+        "summary": "Upload puja image (Admin only)",
+        "tags": [
+          "Upload"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "image"
+                ],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Puja image uploaded successfully"
+          },
+          "400": {
+            "description": "No file uploaded"
+          },
+          "403": {
+            "description": "Access denied"
+          }
+        }
+      }
+    },
+    "/api/upload/icon": {
+      "post": {
+        "summary": "Upload icon image (Admin only)",
+        "tags": [
+          "Upload"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "image"
+                ],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Icon uploaded successfully"
+          },
+          "400": {
+            "description": "No file uploaded"
+          },
+          "403": {
+            "description": "Access denied"
+          }
+        }
+      }
+    },
+    "/api/vendor-pujas": {
+      "post": {
+        "summary": "Assign a puja to a vendor (Admin only)",
+        "tags": [
+          "VendorPuja"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vendorId": {
+                    "type": "string",
+                    "example": "65f123abc456def7890"
+                  },
+                  "pujaId": {
+                    "type": "string",
+                    "example": "65f999abc456def1111"
+                  }
+                },
+                "required": [
+                  "vendorId",
+                  "pujaId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Puja assigned to vendor successfully"
+          },
+          "500": {
+            "description": "Error assigning puja to vendor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/vendor-pujas/{vendorId}": {
+      "get": {
+        "summary": "Get all pujas assigned to a vendor",
+        "tags": [
+          "VendorPuja"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pujas assigned to vendor"
+          },
+          "500": {
+            "description": "Error fetching vendor pujas"
+          }
+        }
+      }
+    },
+    "/api/vendors": {
+      "post": {
+        "summary": "Create a new Vendor",
+        "tags": [
+          "Vendors"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "phone"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "Ramesh"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Sharma"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "919876543210"
+                  },
+                  "city": {
+                    "type": "string",
+                    "example": "Hyderabad"
+                  },
+                  "poojariCategory": {
+                    "type": "string",
+                    "example": "Vedic Pandit"
+                  },
+                  "languages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "Telugu",
+                      "Hindi"
+                    ]
+                  },
+                  "studyPlace": {
+                    "type": "string",
+                    "example": "Tirupati"
+                  },
+                  "experience": {
+                    "type": "number",
+                    "example": 10
+                  },
+                  "profileImage": {
+                    "type": "string",
+                    "example": "/public/profiles/12345.jpg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Vendor created successfully"
+          },
+          "500": {
+            "description": "Error creating vendor"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all vendors",
+        "tags": [
+          "Vendors"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of vendors"
+          },
+          "500": {
+            "description": "Error fetching vendors"
+          }
+        }
+      }
+    },
+    "/api/vendors/{id}/approve": {
+      "patch": {
+        "summary": "Approve a vendor (Admin only)",
+        "tags": [
+          "Vendors"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vendor approved successfully"
+          },
+          "500": {
+            "description": "Error approving vendor"
+          }
+        }
+      }
+    },
+    "/api/vendors/{id}/block": {
+      "patch": {
+        "summary": "Block a vendor (Admin only)",
+        "tags": [
+          "Vendors"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vendor blocked successfully"
+          },
+          "500": {
+            "description": "Error blocking vendor"
+          }
+        }
+      }
+    },
+    "/api/customers": {
+      "post": {
+        "summary": "Create a new Customer",
+        "tags": [
+          "Customers"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "phone"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "Ramesh"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Sharma"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "919876543210"
+                  },
+                  "city": {
+                    "type": "string",
+                    "example": "Hyderabad"
+                  },
+                  "poojariCategory": {
+                    "type": "string",
+                    "example": "Vedic Pandit"
+                  },
+                  "languages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "Telugu",
+                      "Hindi"
+                    ]
+                  },
+                  "studyPlace": {
+                    "type": "string",
+                    "example": "Tirupati"
+                  },
+                  "experience": {
+                    "type": "number",
+                    "example": 10
+                  },
+                  "profileImage": {
+                    "type": "string",
+                    "example": "/public/profiles/12345.jpg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created successfully"
+          },
+          "500": {
+            "description": "Error creating customer"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all customers",
+        "tags": [
+          "Customers"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of customers"
+          },
+          "500": {
+            "description": "Error fetching customers"
+          }
+        }
+      }
+    },
+    "/api/home/cards": {
+      "get": {
+        "summary": "Get home screen cards",
+        "tags": [
+          "Home"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of home cards"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "OTP Authentication APIs"
+    },
+    {
+      "name": "Availability",
+      "description": "Vendor availability management"
+    },
+    {
+      "name": "Bookings",
+      "description": "Booking management APIs"
+    },
+    {
+      "name": "Payments",
+      "description": "Payment simulation APIs"
+    },
+    {
+      "name": "Pujas",
+      "description": "Puja management APIs"
+    },
+    {
+      "name": "Upload",
+      "description": "Image upload APIs"
+    },
+    {
+      "name": "VendorPujas",
+      "description": "Vendor and Puja mapping APIs"
+    },
+    {
+      "name": "Vendors",
+      "description": "Vendor management APIs"
+    },
+    {
+      "name": "Authentication",
+      "description": "OTP based authentication APIs"
+    },
+    {
+      "name": "VendorPuja",
+      "description": "Assign and manage pujas for vendors"
+    }
+  ]
+}

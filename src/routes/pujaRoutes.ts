@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 /**
- * @@swagger
+ * @swagger
  * tags:
  *   name: Pujas
  *   description: Puja management APIs

@@ -9,18 +9,69 @@ import {
 const router = express.Router();
 
 /**
- * Create Customer (Admin only)
+ * @swagger
+ * tags:
+ *   name: Customers
+ *   description: Customer management APIs
  */
-router.post(
-    '/', createCustomer
-);
 
 /**
- * Get all Customers (Admin only)
+ * @swagger
+ * /api/customers:
+ *   post:
+ *     summary: Create a new Customer
+ *     tags: [Customers]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - phone
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "Ramesh"
+ *               lastName:
+ *                 type: string
+ *                 example: "Sharma"
+ *               phone:
+ *                 type: string
+ *                 example: "919876543210"
+ *               city:
+ *                 type: string
+ *                 example: "Hyderabad"
+ *               languages:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["Telugu", "Hindi"]
+ *               profileImage:
+ *                 type: string
+ *                 example: "/public/profiles/12345.jpg"
+ *     responses:
+ *       201:
+ *         description: Customer created successfully
+ *       500:
+ *         description: Error creating customer
  */
-router.get(
-    '/',
-    getCustomers
-);
+router.post('/', createCustomer);
+
+/**
+ * @swagger
+ * /api/customers:
+ *   get:
+ *     summary: Get all Customers
+ *     tags: [Customers]
+ *     responses:
+ *       200:
+ *         description: List of customers
+ *       500:
+ *         description: Error fetching customers
+ */
+router.get('/', getCustomers);
 
 export default router;

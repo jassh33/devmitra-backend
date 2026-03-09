@@ -1,49 +1,16 @@
 import 'dotenv/config';
 import app from './app';
 import connectDB from './config/db';
-import swaggerUi from 'swagger-ui-express';
-//import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerSpec from './config/swagger';
 import { Request, Response } from 'express';
 
 const PORT = process.env.PORT || 5000;
 
 /**
- * ---------------------------
- * Swagger Configuration
- * ---------------------------
+ * @swagger
+ * tags:
+ *   name: Health
+ *   description: Server health check
  */
-/* const swaggerOptions: swaggerJsdoc.Options = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'DevMitra API',
-            version: '1.0.0',
-            description: 'TypeScript Staging Server for DevMitra App',
-        },
-        servers: [
-            {
-                url: `http://localhost:${PORT}`,
-                description: 'Local Development Server',
-            },
-        ],
-        components: {
-            securitySchemes: {
-                bearerAuth: {
-                    type: 'http',
-                    scheme: 'bearer',
-                    bearerFormat: 'JWT',
-                },
-            },
-        },
-    },
-    apis: ['src/routes/*.ts','src/controllers/*.ts'], // Only scan routes
-}; */
-
-//const specs = swaggerJsdoc(swaggerOptions);
-
-// Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
  * @swagger
@@ -55,6 +22,17 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *     responses:
  *       200:
  *         description: Server is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "OK"
+ *                 message:
+ *                   type: string
+ *                   example: "DevMitra TS Server is healthy"
  */
 app.get('/api/health', (req: Request, res: Response) => {
     res.json({ status: 'OK', message: 'DevMitra TS Server is healthy' });

@@ -25,52 +25,6 @@ const generateRefreshToken = (user: any) => {
 const USE_STATIC_OTP = process.env.USE_STATIC_OTP === 'true';
 const STATIC_OTP = process.env.STATIC_OTP || '123456';
 
-/**
- * @swagger
- * tags:
- *   name: Authentication
- *   description: OTP based authentication APIs
- */
-
-/**
- * @swagger
- * /api/auth/send-otp:
- *   post:
- *     summary: Send OTP to user's phone number
- *     tags: [Authentication]
- *     description: |
- *       Sends an OTP to the provided phone number.
- *       In staging mode (USE_STATIC_OTP=true), a static OTP is used.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - phone
- *             properties:
- *               phone:
- *                 type: string
- *                 example: "9876543210"
- *     responses:
- *       200:
- *         description: OTP sent successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 devOtp:
- *                   type: string
- *                   description: Present only when static OTP mode is enabled
- *       400:
- *         description: Phone number is required
- *       500:
- *         description: Error sending OTP
- */
 export const sendOtp = async (req: Request, res: Response) => {
     try {
         const { phone } = req.body;
@@ -128,50 +82,6 @@ export const sendOtp = async (req: Request, res: Response) => {
     }
 };
 
-/**
- * @swagger
- * /api/auth/verify-otp:
- *   post:
- *     summary: Verify OTP and login user
- *     tags: [Authentication]
- *     description: Verifies OTP and returns JWT token on success.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - phone
- *               - otp
- *             properties:
- *               phone:
- *                 type: string
- *                 example: "9876543210"
- *               otp:
- *                 type: string
- *                 example: "123456"
- *     responses:
- *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                 user:
- *                   type: object
- *       400:
- *         description: Invalid or expired OTP
- *       404:
- *         description: User not found
- *       500:
- *         description: Error verifying OTP
- */
 export const verifyOtp = async (req: Request, res: Response) => {
     try {
         const { phone, otp } = req.body;
@@ -210,32 +120,6 @@ export const verifyOtp = async (req: Request, res: Response) => {
     }
 };
 
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     summary: Login with phone and OTP
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - phone
- *               - otp
- *             properties:
- *               phone:
- *                 type: string
- *                 example: "9876543210"
- *               otp:
- *                 type: string
- *                 example: "123456"
- *     responses:
- *       200:
- *         description: Login successful
- */
 export const login = async (req: Request, res: Response) => {
     try {
         const BASE_URL =

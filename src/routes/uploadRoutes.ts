@@ -58,6 +58,34 @@ router.post(
     }
 );
 
+/**
+ * @swagger
+ * /api/upload/home-card:
+ *   post:
+ *     summary: Upload home card image (Admin only)
+ *     tags: [Upload]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Home card image uploaded successfully
+ *       400:
+ *         description: No file uploaded
+ *       403:
+ *         description: Access denied
+ */
 router.post(
     '/home-card',
     protect,

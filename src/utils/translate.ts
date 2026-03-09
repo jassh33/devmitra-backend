@@ -1,5 +1,5 @@
 import { v2 } from '@google-cloud/translate';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 

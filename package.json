@@ -17,6 +17,7 @@
     "@adminjs/express": "^4.1.0",
     "@adminjs/mongoose": "^3.0.0",
     "@adminjs/upload": "^3.0.1",
+    "@google-cloud/translate": "^9.3.0",
     "adminjs": "^6.3.0",
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",

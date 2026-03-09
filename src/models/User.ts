@@ -2,9 +2,11 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export type UserRole = 'customer' | 'vendor' | 'admin';
 
+import { ILocalizedString } from './PujaType';
+
 export interface IUser extends Document {
-    firstName: string;
-    lastName: string;
+    firstName: ILocalizedString;
+    lastName: ILocalizedString;
     phone: string;
     otp?: string | null;
     otpExpiry?: Date | null;
@@ -12,17 +14,17 @@ export interface IUser extends Document {
     role: UserRole;
 
     // Location
-    city?: string;
-    address?: string;
+    city?: ILocalizedString;
+    address?: ILocalizedString;
     location?: {
         lat: number;
         lng: number;
     };
 
     // Vendor specific
-    poojariCategory?: string;
+    poojariCategory?: ILocalizedString;
     languages?: string[];
-    studyPlace?: string;
+    studyPlace?: ILocalizedString;
     experience?: number;
     profileImage?: string;
     isApproved: boolean;
@@ -32,18 +34,25 @@ export interface IUser extends Document {
     updatedAt: Date;
 }
 
+const LocalizedStringSchema = new Schema(
+    {
+        en: { type: String, required: true },
+        hi: { type: String },
+        te: { type: String }
+    },
+    { _id: false }
+);
+
 const UserSchema = new Schema<IUser>(
     {
         firstName: {
-            type: String,
+            type: LocalizedStringSchema,
             required: true,
-            trim: true,
         },
 
         lastName: {
-            type: String,
+            type: LocalizedStringSchema,
             required: true,
-            trim: true,
         },
 
         phone: {
@@ -75,11 +84,11 @@ const UserSchema = new Schema<IUser>(
 
         // Location
         city: {
-            type: String,
+            type: LocalizedStringSchema,
         },
 
         address: {
-            type: String,
+            type: LocalizedStringSchema,
         },
 
         location: {
@@ -89,7 +98,7 @@ const UserSchema = new Schema<IUser>(
 
         // Vendor fields
         poojariCategory: {
-            type: String,
+            type: LocalizedStringSchema,
         },
 
         languages: [
@@ -99,7 +108,7 @@ const UserSchema = new Schema<IUser>(
         ],
 
         studyPlace: {
-            type: String,
+            type: LocalizedStringSchema,
         },
 
         experience: {
@@ -127,8 +136,50 @@ const UserSchema = new Schema<IUser>(
 
 const User = mongoose.model<IUser>('User', UserSchema);
 
+import { autoTranslateContent } from '../utils/translate';
+
+UserSchema.pre('save', async function (next) {
+    if (this.firstName && this.firstName.en && (this.isModified('firstName.en') || this.isNew)) {
+        if (!this.firstName.hi || !this.firstName.te) {
+            const translated = await autoTranslateContent(this.firstName.en);
+            this.firstName = { ...this.firstName, hi: translated.hi, te: translated.te };
+        }
+    }
+    if (this.lastName && this.lastName.en && (this.isModified('lastName.en') || this.isNew)) {
+        if (!this.lastName.hi || !this.lastName.te) {
+            const translated = await autoTranslateContent(this.lastName.en);
+            this.lastName = { ...this.lastName, hi: translated.hi, te: translated.te };
+        }
+    }
+    if (this.city && this.city.en && (this.isModified('city.en') || this.isNew)) {
+        if (!this.city.hi || !this.city.te) {
+            const translated = await autoTranslateContent(this.city.en);
+            this.city = { ...this.city, hi: translated.hi, te: translated.te };
+        }
+    }
+    if (this.address && this.address.en && (this.isModified('address.en') || this.isNew)) {
+        if (!this.address.hi || !this.address.te) {
+            const translated = await autoTranslateContent(this.address.en);
+            this.address = { ...this.address, hi: translated.hi, te: translated.te };
+        }
+    }
+    if (this.poojariCategory && this.poojariCategory.en && (this.isModified('poojariCategory.en') || this.isNew)) {
+        if (!this.poojariCategory.hi || !this.poojariCategory.te) {
+            const translated = await autoTranslateContent(this.poojariCategory.en);
+            this.poojariCategory = { ...this.poojariCategory, hi: translated.hi, te: translated.te };
+        }
+    }
+    if (this.studyPlace && this.studyPlace.en && (this.isModified('studyPlace.en') || this.isNew)) {
+        if (!this.studyPlace.hi || !this.studyPlace.te) {
+            const translated = await autoTranslateContent(this.studyPlace.en);
+            this.studyPlace = { ...this.studyPlace, hi: translated.hi, te: translated.te };
+        }
+    }
+    next();
+});
+
 UserSchema.virtual('fullName').get(function () {
-    return `${this.firstName} ${this.lastName}`;
+    return `${this.firstName?.en || ''} ${this.lastName?.en || ''}`.trim();
 });
 
 UserSchema.set('toJSON', { virtuals: true });

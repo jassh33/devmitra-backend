@@ -1,13 +1,19 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export interface ILocalizedString {
+    en: string;
+    hi?: string;
+    te?: string;
+}
+
 export interface IPujaItem {
-    name: string;
+    name: ILocalizedString;
     defaultQuantity: number;
 }
 
 export interface IPujaType extends Document {
-    name: string;
-    description: string;
+    name: ILocalizedString;
+    description: ILocalizedString;
     basePrice: number;
     image: string;
     durationMinutes: number;
@@ -17,20 +23,29 @@ export interface IPujaType extends Document {
     updatedAt: Date;
 }
 
+const LocalizedStringSchema = new Schema(
+    {
+        en: { type: String, required: true },
+        hi: { type: String },
+        te: { type: String }
+    },
+    { _id: false }
+);
+
 const PujaItemSchema = new Schema<IPujaItem>({
-    name: { type: String, required: true },
+    name: { type: LocalizedStringSchema, required: true },
     defaultQuantity: { type: Number, required: true, default: 1 },
 });
 
 const PujaTypeSchema = new Schema<IPujaType>(
     {
         name: {
-            type: String,
+            type: LocalizedStringSchema,
             required: true,
             unique: true,
         },
         description: {
-            type: String,
+            type: LocalizedStringSchema,
             required: true,
         },
         basePrice: {
@@ -57,8 +72,37 @@ const PujaTypeSchema = new Schema<IPujaType>(
 
 const PujaType = mongoose.model<IPujaType>('PujaType', PujaTypeSchema);
 
+import { autoTranslateContent } from '../utils/translate';
+
+PujaTypeSchema.pre('save', async function (next) {
+    if (this.isModified('name.en') || this.isNew) {
+        if (!this.name.hi || !this.name.te) {
+            const translated = await autoTranslateContent(this.name.en);
+            this.name = { ...this.name, hi: translated.hi, te: translated.te };
+        }
+    }
+    if (this.isModified('description.en') || this.isNew) {
+        if (!this.description.hi || !this.description.te) {
+            const translated = await autoTranslateContent(this.description.en);
+            this.description = { ...this.description, hi: translated.hi, te: translated.te };
+        }
+    }
+
+    if (this.defaultItems && this.defaultItems.length > 0) {
+        for (let item of this.defaultItems) {
+            if (this.isModified('defaultItems') || this.isNew) {
+               if (!item.name.hi || !item.name.te) {
+                   const translated = await autoTranslateContent(item.name.en);
+                   item.name = { ...item.name, hi: translated.hi, te: translated.te };
+               }
+            }
+        }
+    }
+    next();
+});
+
 PujaTypeSchema.virtual('displayName').get(function () {
-    return this.name;
+    return this.name?.en || '';
 });
 
 PujaTypeSchema.set('toJSON', { virtuals: true });

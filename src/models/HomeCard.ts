@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { autoTranslateContent } from '../utils/translate';
 
 export interface ILocalizedString {
     en: string;
@@ -29,38 +30,42 @@ const HomeCardSchema = new Schema<IHomeCard>(
         title: { type: LocalizedStringSchema, required: true },
         description: { type: LocalizedStringSchema, required: true },
         buttonText: { type: LocalizedStringSchema, required: true },
-        image: { type: String },
+        image: { type: String },        // full Cloudinary HTTPS URL
         cardColor: { type: String, required: true },
         isActive: { type: Boolean, default: true },
     },
     { timestamps: true }
 );
 
-import { autoTranslateContent } from '../utils/translate';
-
+// Pre-save hook must be registered BEFORE mongoose.model() is called
 HomeCardSchema.pre('save', async function (next) {
-    if (this.title && this.title.en && (this.isModified('title.en') || this.isNew)) {
-        if (!this.title.hi || !this.title.te) {
-            const translated = await autoTranslateContent(this.title.en);
-            this.title.hi = translated.hi;
-            this.title.te = translated.te;
+    try {
+        if (this.title?.en && (this.isModified('title.en') || this.isNew)) {
+            if (!this.title.hi || !this.title.te) {
+                const translated = await autoTranslateContent(this.title.en);
+                this.title.hi = translated.hi;
+                this.title.te = translated.te;
+            }
         }
-    }
-    if (this.description && this.description.en && (this.isModified('description.en') || this.isNew)) {
-        if (!this.description.hi || !this.description.te) {
-            const translated = await autoTranslateContent(this.description.en);
-            this.description.hi = translated.hi;
-            this.description.te = translated.te;
+        if (this.description?.en && (this.isModified('description.en') || this.isNew)) {
+            if (!this.description.hi || !this.description.te) {
+                const translated = await autoTranslateContent(this.description.en);
+                this.description.hi = translated.hi;
+                this.description.te = translated.te;
+            }
         }
-    }
-    if (this.buttonText && this.buttonText.en && (this.isModified('buttonText.en') || this.isNew)) {
-        if (!this.buttonText.hi || !this.buttonText.te) {
-            const translated = await autoTranslateContent(this.buttonText.en);
-            this.buttonText.hi = translated.hi;
-            this.buttonText.te = translated.te;
+        if (this.buttonText?.en && (this.isModified('buttonText.en') || this.isNew)) {
+            if (!this.buttonText.hi || !this.buttonText.te) {
+                const translated = await autoTranslateContent(this.buttonText.en);
+                this.buttonText.hi = translated.hi;
+                this.buttonText.te = translated.te;
+            }
         }
+        next();
+    } catch (err: any) {
+        console.error('HomeCard pre-save translation error:', err);
+        next(err);
     }
-    next();
 });
 
 export default mongoose.model<IHomeCard>('HomeCard', HomeCardSchema);

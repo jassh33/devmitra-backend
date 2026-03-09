@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { autoTranslateContent } from '../utils/translate';
 
 export interface ILocalizedString {
     en: string;
@@ -53,8 +54,7 @@ const PujaTypeSchema = new Schema<IPujaType>(
             required: true,
         },
         image: {
-            type: String, // stores image URL path
-            required: true,
+            type: String, // stores full Cloudinary HTTPS URL
         },
         durationMinutes: {
             type: Number,
@@ -70,38 +70,48 @@ const PujaTypeSchema = new Schema<IPujaType>(
     { timestamps: true }
 );
 
-const PujaType = mongoose.model<IPujaType>('PujaType', PujaTypeSchema);
-
-import { autoTranslateContent } from '../utils/translate';
-
+/**
+ * Pre-save hook: auto-translate name, description and defaultItems
+ * from English to Hindi (hi) and Telugu (te).
+ *
+ * IMPORTANT: this hook must be registered BEFORE mongoose.model() is called.
+ */
 PujaTypeSchema.pre('save', async function (next) {
-    if (this.name && this.name.en && (this.isModified('name.en') || this.isNew)) {
-        if (!this.name.hi || !this.name.te) {
-            const translated = await autoTranslateContent(this.name.en);
-            this.name.hi = translated.hi;
-            this.name.te = translated.te;
-        }
-    }
-    if (this.description && this.description.en && (this.isModified('description.en') || this.isNew)) {
-        if (!this.description.hi || !this.description.te) {
-            const translated = await autoTranslateContent(this.description.en);
-            this.description.hi = translated.hi;
-            this.description.te = translated.te;
-        }
-    }
-
-    if (this.defaultItems && this.defaultItems.length > 0) {
-        for (let item of this.defaultItems) {
-            if (item.name && item.name.en && (this.isModified('defaultItems') || this.isNew)) {
-               if (!item.name.hi || !item.name.te) {
-                   const translated = await autoTranslateContent(item.name.en);
-                   item.name.hi = translated.hi;
-                   item.name.te = translated.te;
-               }
+    try {
+        // --- Translate name ---
+        if (this.name?.en && (this.isModified('name.en') || this.isNew)) {
+            if (!this.name.hi || !this.name.te) {
+                const translated = await autoTranslateContent(this.name.en);
+                this.name.hi = translated.hi;
+                this.name.te = translated.te;
             }
         }
+
+        // --- Translate description ---
+        if (this.description?.en && (this.isModified('description.en') || this.isNew)) {
+            if (!this.description.hi || !this.description.te) {
+                const translated = await autoTranslateContent(this.description.en);
+                this.description.hi = translated.hi;
+                this.description.te = translated.te;
+            }
+        }
+
+        // --- Translate each defaultItem name ---
+        if (this.defaultItems?.length > 0 && (this.isModified('defaultItems') || this.isNew)) {
+            for (const item of this.defaultItems) {
+                if (item.name?.en && (!item.name.hi || !item.name.te)) {
+                    const translated = await autoTranslateContent(item.name.en);
+                    item.name.hi = translated.hi;
+                    item.name.te = translated.te;
+                }
+            }
+        }
+
+        next();
+    } catch (err: any) {
+        console.error('PujaType pre-save translation error:', err);
+        next(err);
     }
-    next();
 });
 
 PujaTypeSchema.virtual('displayName').get(function () {
@@ -110,5 +120,8 @@ PujaTypeSchema.virtual('displayName').get(function () {
 
 PujaTypeSchema.set('toJSON', { virtuals: true });
 PujaTypeSchema.set('toObject', { virtuals: true });
+
+// Model must be created AFTER all hooks/virtuals are registered
+const PujaType = mongoose.model<IPujaType>('PujaType', PujaTypeSchema);
 
 export default PujaType;

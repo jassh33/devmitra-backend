@@ -73,8 +73,14 @@ const adminJs = new AdminJS({
             resource: PujaType,
             options: {
                 navigation: { name: 'Puja Management', icon: 'Book' },
+                listProperties: ['name', 'image', 'basePrice', 'isActive'],
+                showProperties: ['name', 'description', 'image', 'basePrice', 'durationMinutes', 'defaultItems', 'isActive', 'createdAt'],
+                editProperties: ['name', 'description', 'uploadPujaImage', 'basePrice', 'durationMinutes', 'defaultItems', 'isActive'],
                 properties: {
                     __v: { isVisible: false },
+                    image: { isVisible: { list: true, show: true, edit: false, filter: false } },
+                    'name.en': { label: 'Name (English)', isRequired: true },
+                    'description.en': { label: 'Description (English)', isRequired: true },
                 },
             },
             features: [

@@ -8,62 +8,79 @@ import Booking from '../models/Booking';
 
 dotenv.config();
 
+const translateIfNeeded = async (field: any): Promise<any> => {
+    // If it's a plain string from old DB
+    if (typeof field === 'string') {
+        return await autoTranslateContent(field);
+    }
+    // If it's an object casted by Mongoose but lacking translations
+    if (field && typeof field === 'object' && field.en) {
+        if (!field.hi || !field.te) {
+            const translated = await autoTranslateContent(field.en);
+            return {
+                en: field.en,
+                hi: translated.hi || field.en,
+                te: translated.te || field.en,
+            };
+        }
+        return false; // Already translated
+    }
+    return false;
+};
+
 const migrate = async () => {
     try {
         console.log('Connecting to MongoDB...');
-        // ensure DB is passed from env
         await mongoose.connect(process.env.MONGO_URI as string);
         console.log('Connected!');
 
         if (!process.env.GOOGLE_TRANSLATE_API_KEY) {
             console.error('ERROR: GOOGLE_TRANSLATE_API_KEY is missing in your .env file!');
-            console.error('The translation functionality requires the Google Cloud Translate API Key.');
             process.exit(1);
         }
 
         console.log('Migrating HomeCards...');
         const cards = await HomeCard.find();
+        let cardsUpdated = 0;
         for (const card of cards) {
             const tempCard = card as any;
             let updated = false;
-            // Legacy data is usually a string from the DB before our schema changes
-            if (typeof tempCard.title === 'string') {
-                card.title = await autoTranslateContent(tempCard.title) as any;
-                updated = true;
-            }
-            if (typeof tempCard.description === 'string') {
-                card.description = await autoTranslateContent(tempCard.description) as any;
-                updated = true;
-            }
-            if (typeof tempCard.buttonText === 'string') {
-                card.buttonText = await autoTranslateContent(tempCard.buttonText) as any;
-                updated = true;
-            }
+            
+            const transTitle = await translateIfNeeded(tempCard.title);
+            if (transTitle) { card.title = transTitle; updated = true; }
+            
+            const transDesc = await translateIfNeeded(tempCard.description);
+            if (transDesc) { card.description = transDesc; updated = true; }
+            
+            const transBtn = await translateIfNeeded(tempCard.buttonText);
+            if (transBtn) { card.buttonText = transBtn; updated = true; }
+
             if (updated) {
                 await card.save();
+                cardsUpdated++;
                 console.log(`✓ Migrated HomeCard: ${card.title?.en || 'Untitled'}`);
             }
         }
+        console.log(`Total HomeCards updated: ${cardsUpdated}`);
 
         console.log('Migrating PujaTypes...');
         const pujas = await PujaType.find();
+        let pujasUpdated = 0;
         for (const puja of pujas) {
             const tempPuja = puja as any;
             let updated = false;
-            if (typeof tempPuja.name === 'string') {
-                puja.name = await autoTranslateContent(tempPuja.name) as any;
-                updated = true;
-            }
-            if (typeof tempPuja.description === 'string') {
-                puja.description = await autoTranslateContent(tempPuja.description) as any;
-                updated = true;
-            }
+            
+            const transName = await translateIfNeeded(tempPuja.name);
+            if (transName) { puja.name = transName; updated = true; }
+            
+            const transDesc = await translateIfNeeded(tempPuja.description);
+            if (transDesc) { puja.description = transDesc; updated = true; }
             
             if (puja.defaultItems && puja.defaultItems.length > 0) {
                 for (let i = 0; i < puja.defaultItems.length; i++) {
-                    const tempItem = puja.defaultItems[i] as any;
-                    if (typeof tempItem.name === 'string') {
-                        puja.defaultItems[i].name = await autoTranslateContent(tempItem.name) as any;
+                    const transItem = await translateIfNeeded(puja.defaultItems[i].name);
+                    if (transItem) {
+                        puja.defaultItems[i].name = transItem;
                         updated = true;
                     }
                 }
@@ -71,64 +88,66 @@ const migrate = async () => {
 
             if (updated) {
                 await puja.save();
+                pujasUpdated++;
                 console.log(`✓ Migrated PujaType: ${puja.name?.en || 'Unnamed'}`);
             }
         }
+        console.log(`Total PujaTypes updated: ${pujasUpdated}`);
 
         console.log('Migrating Users...');
         const users = await User.find();
+        let usersUpdated = 0;
         for (const user of users) {
             const tempUser = user as any;
             let updated = false;
-            if (typeof tempUser.firstName === 'string') {
-                user.firstName = await autoTranslateContent(tempUser.firstName) as any;
-                updated = true;
-            }
-            if (typeof tempUser.lastName === 'string') {
-                user.lastName = await autoTranslateContent(tempUser.lastName) as any;
-                updated = true;
-            }
-            if (tempUser.city && typeof tempUser.city === 'string') {
-                user.city = await autoTranslateContent(tempUser.city) as any;
-                updated = true;
-            }
-            if (tempUser.address && typeof tempUser.address === 'string') {
-                user.address = await autoTranslateContent(tempUser.address) as any;
-                updated = true;
-            }
-            if (tempUser.poojariCategory && typeof tempUser.poojariCategory === 'string') {
-                user.poojariCategory = await autoTranslateContent(tempUser.poojariCategory) as any;
-                updated = true;
-            }
-            if (tempUser.studyPlace && typeof tempUser.studyPlace === 'string') {
-                user.studyPlace = await autoTranslateContent(tempUser.studyPlace) as any;
-                updated = true;
-            }
+            
+            const transFirst = await translateIfNeeded(tempUser.firstName);
+            if (transFirst) { user.firstName = transFirst; updated = true; }
+            
+            const transLast = await translateIfNeeded(tempUser.lastName);
+            if (transLast) { user.lastName = transLast; updated = true; }
+            
+            const transCity = await translateIfNeeded(tempUser.city);
+            if (transCity) { user.city = transCity; updated = true; }
+            
+            const transAddr = await translateIfNeeded(tempUser.address);
+            if (transAddr) { user.address = transAddr; updated = true; }
+            
+            const transCat = await translateIfNeeded(tempUser.poojariCategory);
+            if (transCat) { user.poojariCategory = transCat; updated = true; }
+            
+            const transStudy = await translateIfNeeded(tempUser.studyPlace);
+            if (transStudy) { user.studyPlace = transStudy; updated = true; }
 
             if (updated) {
                 await user.save();
+                usersUpdated++;
                 console.log(`✓ Migrated User: ${user.firstName?.en || tempUser.firstName}`);
             }
         }
+        console.log(`Total Users updated: ${usersUpdated}`);
 
         console.log('Migrating Bookings...');
         const bookings = await Booking.find();
+        let bookingsUpdated = 0;
         for (const booking of bookings) {
             let updated = false;
             if (booking.bookingItems && booking.bookingItems.length > 0) {
                 for (let i = 0; i < booking.bookingItems.length; i++) {
-                    const tempItem = booking.bookingItems[i] as any;
-                    if (typeof tempItem.name === 'string') {
-                        booking.bookingItems[i].name = await autoTranslateContent(tempItem.name) as any;
+                    const transName = await translateIfNeeded(booking.bookingItems[i].name);
+                    if (transName) {
+                        booking.bookingItems[i].name = transName;
                         updated = true;
                     }
                 }
             }
             if (updated) {
                 await booking.save();
+                bookingsUpdated++;
                 console.log(`✓ Migrated Booking ID: ${booking._id}`);
             }
         }
+        console.log(`Total Bookings updated: ${bookingsUpdated}`);
 
         console.log('\n✅ All existing database documents migrated seamlessly!');
         process.exit(0);

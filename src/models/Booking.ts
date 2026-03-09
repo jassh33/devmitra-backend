@@ -108,10 +108,11 @@ import { autoTranslateContent } from '../utils/translate';
 BookingSchema.pre('save', async function (next) {
     if (this.bookingItems && this.bookingItems.length > 0) {
         for (let item of this.bookingItems) {
-            if (this.isModified('bookingItems') || this.isNew) {
+            if (item.name && item.name.en && (this.isModified('bookingItems') || this.isNew)) {
                if (!item.name.hi || !item.name.te) {
                    const translated = await autoTranslateContent(item.name.en);
-                   item.name = { ...item.name, hi: translated.hi, te: translated.te };
+                   item.name.hi = translated.hi;
+                   item.name.te = translated.te;
                }
             }
         }

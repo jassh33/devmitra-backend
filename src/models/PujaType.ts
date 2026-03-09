@@ -75,25 +75,28 @@ const PujaType = mongoose.model<IPujaType>('PujaType', PujaTypeSchema);
 import { autoTranslateContent } from '../utils/translate';
 
 PujaTypeSchema.pre('save', async function (next) {
-    if (this.isModified('name.en') || this.isNew) {
+    if (this.name && this.name.en && (this.isModified('name.en') || this.isNew)) {
         if (!this.name.hi || !this.name.te) {
             const translated = await autoTranslateContent(this.name.en);
-            this.name = { ...this.name, hi: translated.hi, te: translated.te };
+            this.name.hi = translated.hi;
+            this.name.te = translated.te;
         }
     }
-    if (this.isModified('description.en') || this.isNew) {
+    if (this.description && this.description.en && (this.isModified('description.en') || this.isNew)) {
         if (!this.description.hi || !this.description.te) {
             const translated = await autoTranslateContent(this.description.en);
-            this.description = { ...this.description, hi: translated.hi, te: translated.te };
+            this.description.hi = translated.hi;
+            this.description.te = translated.te;
         }
     }
 
     if (this.defaultItems && this.defaultItems.length > 0) {
         for (let item of this.defaultItems) {
-            if (this.isModified('defaultItems') || this.isNew) {
+            if (item.name && item.name.en && (this.isModified('defaultItems') || this.isNew)) {
                if (!item.name.hi || !item.name.te) {
                    const translated = await autoTranslateContent(item.name.en);
-                   item.name = { ...item.name, hi: translated.hi, te: translated.te };
+                   item.name.hi = translated.hi;
+                   item.name.te = translated.te;
                }
             }
         }

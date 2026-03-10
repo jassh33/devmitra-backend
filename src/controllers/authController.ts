@@ -183,7 +183,7 @@ export const login = async (req: Request, res: Response) => {
                     state: user.city || "",
                     city: user.city || "",
                     profile_image: user.profileImage
-                        ? `${BASE_URL}${user.profileImage}`
+                        ? user.profileImage
                         : null,
                 },
             },

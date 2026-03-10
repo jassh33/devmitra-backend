@@ -116,7 +116,7 @@ router.post('/', protect, authorizeRoles('admin'), createVendor);
  *       403:
  *         description: Forbidden — Admin only
  */
-router.get('/', protect, authorizeRoles('admin'), getVendors);
+router.get('/', protect, authorizeRoles('admin','customer'), getVendors);
 
 /**
  * @swagger

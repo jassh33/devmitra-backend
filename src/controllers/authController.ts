@@ -182,6 +182,7 @@ export const login = async (req: Request, res: Response) => {
                     is_active: !user.isBlocked,
                     state: user.city || "",
                     city: user.city || "",
+                    gender: user.gender || null,
                     profile_image: user.profileImage
                         ? user.profileImage
                         : null,

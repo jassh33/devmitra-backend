@@ -8,7 +8,7 @@ export const createCustomer = async (req: Request, res: Response) => {
         const customer = await User.create({
             ...req.body,
             role: 'customer',
-            isApproved: true,   // usually customers auto approved
+            isApproved: true,
             isBlocked: false,
         });
 

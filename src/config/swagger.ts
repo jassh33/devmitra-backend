@@ -43,6 +43,7 @@ const options: Options = {
                         role:           { type: 'string', enum: ['customer', 'vendor', 'admin'] },
                         city:           { $ref: '#/components/schemas/LocalizedString' },
                         profileImage:   { type: 'string', example: 'https://res.cloudinary.com/...' },
+                        gender:         { type: 'string', enum: ['male', 'female', 'other'], example: 'male' },
                         isApproved:     { type: 'boolean' },
                         isBlocked:      { type: 'boolean' },
                         experience:     { type: 'number', example: 5 },

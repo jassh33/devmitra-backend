@@ -209,6 +209,7 @@ router.post('/verify-otp', verifyOtp);
  *                         is_verified:    { type: boolean }
  *                         is_active:      { type: boolean }
  *                         city:           { type: string }
+ *                         gender:         { type: string, enum: [male, female, other, null] }
  *                         profile_image:  { type: string, example: "https://res.cloudinary.com/..." }
  *       400:
  *         description: Invalid or expired OTP

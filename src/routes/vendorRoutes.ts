@@ -65,6 +65,11 @@ const router = express.Router();
  *               experience:
  *                 type: number
  *                 example: 10
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female, other]
+ *                 example: "male"
+ *                 description: Optional — send as plain string
  *     responses:
  *       201:
  *         description: Vendor created (not yet approved)

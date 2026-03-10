@@ -53,6 +53,11 @@ const router = express.Router();
  *                 items:
  *                   type: string
  *                 example: ["Telugu", "Hindi"]
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female, other]
+ *                 example: "male"
+ *                 description: Optional — send as plain string
  *     responses:
  *       201:
  *         description: Customer created successfully

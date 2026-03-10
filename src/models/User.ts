@@ -28,6 +28,7 @@ export interface IUser extends Document {
     studyPlace?: ILocalizedString;
     experience?: number;
     profileImage?: string;
+    gender?: ILocalizedString;
     isApproved: boolean;
     isBlocked: boolean;
 
@@ -51,7 +52,7 @@ const UserSchema = new Schema<IUser>(
         phone: { type: String, required: true, unique: true },
         otp: { type: String, default: null },
         otpExpiry: { type: Date, default: null },
-        email: { type: String, lowercase: true, trim: true },
+        email: { type: String, required: true, lowercase: true, trim: true },
         role: {
             type: String,
             enum: ['customer', 'vendor', 'admin'],
@@ -68,6 +69,10 @@ const UserSchema = new Schema<IUser>(
         studyPlace: { type: LocalizedStringSchema },
         experience: { type: Number },
         profileImage: { type: String },
+        gender: {
+            type: String, required: true,
+            enum: ['male', 'female', 'other'],
+        },
         isApproved: { type: Boolean, default: false },
         isBlocked: { type: Boolean, default: false },
     },
@@ -117,6 +122,13 @@ UserSchema.pre('save', async function (next) {
                 const translated = await autoTranslateContent(this.studyPlace.en);
                 this.studyPlace.hi = translated.hi;
                 this.studyPlace.te = translated.te;
+            }
+        }
+        if(this.gender?.en && (this.isModified('gender.en') || this.isNew)) {
+            if (!this.gender.hi || !this.gender.te) {
+                const translated = await autoTranslateContent(this.gender.en);
+                this.gender.hi = translated.hi;
+                this.gender.te = translated.te;
             }
         }
         next();

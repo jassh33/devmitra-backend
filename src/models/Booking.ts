@@ -21,11 +21,15 @@ interface IBookingItem {
 export interface IBooking extends Document {
     customer: mongoose.Types.ObjectId;
     vendor?: mongoose.Types.ObjectId;
-    puja: mongoose.Types.ObjectId;
-    availability: mongoose.Types.ObjectId;
+    puja?: mongoose.Types.ObjectId;
+    availability?: mongoose.Types.ObjectId;
+
+    date: string;
+    time: string;
 
     bookingItems: IBookingItem[];
 
+    vendorFee: number;
     totalAmount: number;
 
     status: BookingStatus;
@@ -68,14 +72,25 @@ const BookingSchema = new Schema<IBooking>(
         puja: {
             type: Schema.Types.ObjectId,
             ref: 'PujaType',
-            required: true,
         },
         availability: {
             type: Schema.Types.ObjectId,
             ref: 'Availability',
+        },
+        date: {
+            type: String,
+            required: true,
+        },
+        time: {
+            type: String,
             required: true,
         },
         bookingItems: [BookingItemSchema],
+        vendorFee: {
+            type: Number,
+            required: true,
+            default: 0,
+        },
         totalAmount: {
             type: Number,
             required: true,
@@ -101,8 +116,6 @@ const BookingSchema = new Schema<IBooking>(
     { timestamps: true }
 );
 
-const Booking = mongoose.model<IBooking>('Booking', BookingSchema);
-
 import { autoTranslateContent } from '../utils/translate';
 
 BookingSchema.pre('save', async function (next) {
@@ -119,5 +132,7 @@ BookingSchema.pre('save', async function (next) {
     }
     next();
 });
+
+const Booking = mongoose.model<IBooking>('Booking', BookingSchema);
 
 export default Booking;

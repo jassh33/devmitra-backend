@@ -112,6 +112,37 @@ const adminJs = new AdminJS({
             resource: Booking,
             options: {
                 navigation: { name: 'Booking Management', icon: 'Calendar' },
+                properties: {
+                    _id: { isVisible: { list: false, filter: false, show: true, edit: false } },
+                    createdAt: { isVisible: { list: true, filter: true, show: true, edit: false } },
+                    customer: { isTitle: true },
+                    vendor: {},
+                    puja: {},
+                    date: {},
+                    time: {},
+                    vendorFee: {},
+                    totalAmount: {},
+                    status: {
+                        availableValues: [
+                            { value: 'pending', label: 'Pending' },
+                            { value: 'requested', label: 'Requested' },
+                            { value: 'accepted', label: 'Accepted' },
+                            { value: 'rejected', label: 'Rejected' },
+                            { value: 'completed', label: 'Completed' },
+                            { value: 'cancelled', label: 'Cancelled' },
+                        ],
+                    },
+                    paymentStatus: {
+                        availableValues: [
+                            { value: 'pending', label: 'Pending' },
+                            { value: 'paid', label: 'Paid' },
+                            { value: 'failed', label: 'Failed' },
+                        ],
+                    },
+                },
+                listProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'totalAmount', 'status', 'paymentStatus'],
+                showProperties: ['_id', 'customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus', 'bookingItems', 'createdAt', 'updatedAt'],
+                editProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus', 'bookingItems'],
             },
         },
         {

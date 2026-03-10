@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import Booking from '../models/Booking';
 import Availability from '../models/Availability';
+import User from '../models/User';
+import PujaType from '../models/PujaType';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 /**
@@ -14,7 +16,15 @@ import { AuthRequest } from '../middleware/authMiddleware';
  * @swagger
  * /api/bookings:
  *   post:
- *     summary: Create a new booking
+ *     summary: Create a new booking (Puja Only, Pandit Only, or Both)
+ *     description: |
+ *       Creates a new booking. 
+ *       - **Puja Only**: Books the Puja, admin assigns Pandit later (`status: pending`).
+ *       - **Pandit Only**: Books the Pandit, checks availability (`status: requested`).
+ *       - **Both**: Books both, checks Pandit availability (`status: requested`).
+ *       
+ *       Automatically calculates total amount = puja.basePrice + vendorFee.
+ *       Automatically adds default Puja items if `bookingItems` is omitted.
  *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
@@ -25,23 +35,26 @@ import { AuthRequest } from '../middleware/authMiddleware';
  *           schema:
  *             type: object
  *             required:
- *               - customer
- *               - puja
- *               - availability
- *               - totalAmount
+ *               - date
+ *               - time
  *             properties:
- *               customer:
+ *               vendorId:
  *                 type: string
- *               vendor:
+ *                 description: Optional. The ID of the specific Pandit to book.
+ *                 example: "64abc123def456"
+ *               pujaId:
  *                 type: string
- *               puja:
+ *                 description: Optional. The ID of the specific Puja to perform.
+ *                 example: "64xyz987def654"
+ *               date:
  *                 type: string
- *               availability:
+ *                 example: "2025-12-24"
+ *               time:
  *                 type: string
- *               totalAmount:
- *                 type: number
+ *                 example: "09:00 AM - 11:00 AM"
  *               bookingItems:
  *                 type: array
+ *                 description: Optional custom puja/decoration items. If omitted and pujaId is provided, defaults are used.
  *                 items:
  *                   type: object
  *                   properties:
@@ -52,58 +65,143 @@ import { AuthRequest } from '../middleware/authMiddleware';
  *     responses:
  *       201:
  *         description: Booking created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Booking'
+ *       400:
+ *         description: Invalid input or Pandit is already booked at that time
  *       500:
- *         description: Error creating booking
+ *         description: Server error
  */
-export const createBooking = async (req: Request, res: Response) => {
+export const createBooking = async (req: AuthRequest, res: Response) => {
     try {
-        const booking = await Booking.create(req.body);
+        const { vendorId, pujaId, date, time, bookingItems } = req.body;
+        const customerId = req.user?.id || req.user?._id;
 
-        await Availability.findByIdAndUpdate(req.body.availability, {
-            isBooked: true,
+        if (!date || !time) {
+            return res.status(400).json({ message: 'Date and time are required' });
+        }
+
+        if (!vendorId && !pujaId) {
+            return res.status(400).json({ message: 'Must select at least a Puja or a Pandit' });
+        }
+
+        let vendorFee = 0;
+        let pujaPrice = 0;
+        let finalBookingItems = bookingItems || [];
+
+        // 1. If Puja is selected
+        if (pujaId) {
+            const puja = await PujaType.findById(pujaId);
+            if (!puja) {
+                return res.status(404).json({ message: 'Puja not found' });
+            }
+            pujaPrice = puja.basePrice || 0;
+
+            // If no custom items passed, use default items
+            if (!bookingItems || bookingItems.length === 0) {
+                finalBookingItems = puja.defaultItems ? puja.defaultItems.map((item: any) => ({
+                    // For nested documents, we need to handle the structure. If item.name is already {en, hi, te}, great.
+                    // If it's a string, wrap it. Our PujaType stores it as LocalizedStringSchema.
+                    name: typeof item.name === 'string' ? { en: item.name } : item.name,
+                    quantity: item.defaultQuantity,
+                    modifiedBy: 'customer'
+                })) : [];
+            }
+        } else {
+            // Ensure if bookingItems are manually provided they are correctly formatted
+            if (finalBookingItems.length > 0) {
+                finalBookingItems = finalBookingItems.map((item: any) => ({
+                    name: typeof item.name === 'string' ? { en: item.name } : item.name,
+                    quantity: item.quantity,
+                    modifiedBy: 'customer'
+                }));
+            }
+        }
+
+        // 2. If Vendor is selected (check availability)
+        if (vendorId) {
+            const vendor = await User.findById(vendorId);
+            if (!vendor || vendor.role !== 'vendor') {
+                return res.status(404).json({ message: 'Vendor (Pandit) not found' });
+            }
+            vendorFee = vendor.fee || 0;
+
+            // Check if vendor already has a booking on this date/time that isn't cancelled/rejected
+            const overlappingBooking = await Booking.findOne({
+                vendor: vendorId,
+                date,
+                time,
+                status: { $nin: ['cancelled', 'rejected'] }
+            });
+
+            if (overlappingBooking) {
+                return res.status(400).json({ message: 'Pandit is already booked at this date and time' });
+            }
+        }
+
+        const totalAmount = pujaPrice + vendorFee;
+
+        const newBooking = await Booking.create({
+            customer: customerId,
+            vendor: vendorId || undefined,
+            puja: pujaId || undefined,
+            date,
+            time,
+            vendorFee,
+            totalAmount,
+            bookingItems: finalBookingItems,
+            status: vendorId ? 'requested' : 'pending', // If no vendor, it's pending admin assignment
+            paymentStatus: 'pending'
         });
 
-        res.status(201).json(booking);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating booking' });
+        res.status(201).json(newBooking);
+
+    } catch (error: any) {
+        console.error('Booking Error:', error);
+        res.status(500).json({ message: error?.message || 'Error creating booking' });
     }
 };
 
 /**
  * @swagger
- * /api/bookings/customer/{customerId}:
+ * /api/bookings/my-bookings:
  *   get:
- *     summary: Get bookings by customer
+ *     summary: Get logged-in user's bookings
+ *     description: Returns the booking history for the current user. If the user is a customer, returns bookings they made. If vendor, returns bookings assigned to them. Automatically populates `vendor` and `puja` details for displaying on the History screen.
  *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: customerId
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
- *         description: List of customer bookings
- *       403:
- *         description: Access denied
+ *         description: List of bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Booking'
  *       500:
  *         description: Error fetching bookings
  */
-export const getCustomerBookings = async (req: AuthRequest, res: Response) => {
+export const getMyBookings = async (req: AuthRequest, res: Response) => {
     try {
-        const { customerId } = req.params;
+        const userId = req.user?.id || req.user?._id;
+        const role = req.user?.role;
 
-        if (req.user.id !== customerId) {
-            return res.status(403).json({ message: 'Access denied' });
-        }
+        const query = role === 'vendor' ? { vendor: userId } : { customer: userId };
 
-        const bookings = await Booking.find({ customer: customerId });
+        const bookings = await Booking.find(query)
+            .populate('vendor', 'firstName lastName profileImage phone city fee')
+            .populate('puja', 'name image durationMinutes basePrice')
+            .populate('customer', 'firstName lastName phone city')
+            .sort({ createdAt: -1 });
 
-        res.json(bookings);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching bookings' });
+        res.status(200).json(bookings);
+    } catch (error: any) {
+        console.error('Get Bookings Error:', error);
+        res.status(500).json({ message: error?.message || 'Error fetching bookings' });
     }
 };
 
@@ -127,13 +225,18 @@ export const getCustomerBookings = async (req: AuthRequest, res: Response) => {
  *       500:
  *         description: Error accepting booking
  */
-export const acceptBooking = async (req: Request, res: Response) => {
+export const acceptBooking = async (req: AuthRequest, res: Response) => {
     try {
-        const booking = await Booking.findByIdAndUpdate(
-            req.params.id,
+        // Only the assigned vendor should be able to accept
+        const booking = await Booking.findOneAndUpdate(
+            { _id: req.params.id, vendor: req.user?.id },
             { status: 'accepted' },
             { new: true }
         );
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found or not assigned to you' });
+        }
 
         res.json(booking);
     } catch (error) {
@@ -161,13 +264,17 @@ export const acceptBooking = async (req: Request, res: Response) => {
  *       500:
  *         description: Error rejecting booking
  */
-export const rejectBooking = async (req: Request, res: Response) => {
+export const rejectBooking = async (req: AuthRequest, res: Response) => {
     try {
-        const booking = await Booking.findByIdAndUpdate(
-            req.params.id,
+        const booking = await Booking.findOneAndUpdate(
+            { _id: req.params.id, vendor: req.user?.id },
             { status: 'rejected' },
             { new: true }
         );
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found or not assigned to you' });
+        }
 
         res.json(booking);
     } catch (error) {
@@ -179,7 +286,7 @@ export const rejectBooking = async (req: Request, res: Response) => {
  * @swagger
  * /api/bookings/{id}/assign:
  *   patch:
- *     summary: Admin assigns vendor to booking
+ *     summary: Admin assigns vendor to a pending booking
  *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
@@ -210,10 +317,16 @@ export const assignVendor = async (req: Request, res: Response) => {
     try {
         const { vendorId } = req.body;
 
+        const vendor = await User.findById(vendorId);
+        if(!vendor || vendor.role !== 'vendor') {
+             return res.status(404).json({ message: 'Vendor not found' });
+        }
+
         const booking = await Booking.findByIdAndUpdate(
             req.params.id,
             {
                 vendor: vendorId,
+                vendorFee: vendor.fee || 0, // Update fee on assignment
                 status: 'requested',
             },
             { new: true }
@@ -222,55 +335,5 @@ export const assignVendor = async (req: Request, res: Response) => {
         res.json(booking);
     } catch (error) {
         res.status(500).json({ message: 'Error assigning vendor' });
-    }
-};
-
-/**
- * @swagger
- * /api/bookings/vendor/{vendorId}:
- *   get:
- *     summary: Get bookings for vendor (optional status filter)
- *     tags: [Bookings]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: vendorId
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: status
- *         required: false
- *         schema:
- *           type: string
- *           enum: [pending, requested, accepted, rejected, completed, cancelled]
- *     responses:
- *       200:
- *         description: List of vendor bookings
- *       403:
- *         description: Access denied
- *       500:
- *         description: Error fetching vendor bookings
- */
-export const getVendorBookings = async (req: AuthRequest, res: Response) => {
-    try {
-        const { vendorId } = req.params;
-
-        if (req.user.id !== vendorId) {
-            return res.status(403).json({ message: 'Access denied' });
-        }
-
-        const filter: any = { vendor: vendorId };
-
-        if (req.query.status) {
-            filter.status = req.query.status;
-        }
-
-        const bookings = await Booking.find(filter);
-
-        res.json(bookings);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching vendor bookings' });
     }
 };

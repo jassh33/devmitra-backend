@@ -47,6 +47,7 @@ const options: Options = {
                         isApproved:     { type: 'boolean' },
                         isBlocked:      { type: 'boolean' },
                         experience:     { type: 'number', example: 5 },
+                        fee:            { type: 'number', example: 500, description: 'Vendor fee in INR (optional)' },
                         languages:      { type: 'array', items: { type: 'string' } },
                         poojariCategory:{ $ref: '#/components/schemas/LocalizedString' },
                         studyPlace:     { $ref: '#/components/schemas/LocalizedString' },

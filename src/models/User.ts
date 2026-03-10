@@ -27,6 +27,7 @@ export interface IUser extends Document {
     languages?: string[];
     studyPlace?: ILocalizedString;
     experience?: number;
+    fee?: number;
     profileImage?: string;
     gender?: ILocalizedString;
     isApproved: boolean;
@@ -68,6 +69,7 @@ const UserSchema = new Schema<IUser>(
         languages: [{ type: String }],
         studyPlace: { type: LocalizedStringSchema },
         experience: { type: Number },
+        fee: { type: Number },
         profileImage: { type: String },
         gender: {
             type: LocalizedStringSchema, required: true,

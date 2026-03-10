@@ -65,6 +65,10 @@ const router = express.Router();
  *               experience:
  *                 type: number
  *                 example: 10
+ *               fee:
+ *                 type: number
+ *                 example: 500
+ *                 description: Vendor fee in INR (optional)
  *               gender:
  *                 type: string
  *                 enum: [male, female, other]

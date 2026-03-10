@@ -70,7 +70,7 @@ const UserSchema = new Schema<IUser>(
         experience: { type: Number },
         profileImage: { type: String },
         gender: {
-            type: String, required: true,
+            type: LocalizedStringSchema, required: true,
             enum: ['male', 'female', 'other'],
         },
         isApproved: { type: Boolean, default: false },

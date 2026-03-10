@@ -24,7 +24,7 @@ export interface IUser extends Document {
 
     // Vendor specific
     poojariCategory?: ILocalizedString;
-    languages?: string[];
+    languages?: ILocalizedString[];
     studyPlace?: ILocalizedString;
     experience?: number;
     fee?: number;
@@ -66,7 +66,7 @@ const UserSchema = new Schema<IUser>(
             lng: { type: Number },
         },
         poojariCategory: { type: LocalizedStringSchema },
-        languages: [{ type: String }],
+        languages: [{ type: LocalizedStringSchema }],
         studyPlace: { type: LocalizedStringSchema },
         experience: { type: Number },
         fee: { type: Number },
@@ -131,6 +131,18 @@ UserSchema.pre('save', async function (next) {
                 const translated = await autoTranslateContent(this.gender.en);
                 this.gender.hi = translated.hi;
                 this.gender.te = translated.te;
+            }
+        }
+        if (this.languages && this.languages.length) {
+            for (let i = 0; i < this.languages.length; i++) {
+                const lang = this.languages[i];
+
+                if (lang?.en && (!lang.hi || !lang.te)) {
+                    const translated = await autoTranslateContent(lang.en);
+
+                    lang.hi = translated.hi;
+                    lang.te = translated.te;
+                }
             }
         }
         next();

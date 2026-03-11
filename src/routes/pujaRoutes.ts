@@ -1,5 +1,5 @@
 import express from 'express';
-import { createPuja, getPujas, updatePuja, deletePuja } from '../controllers/pujaController';
+import { createPuja, getPujas, updatePuja, deletePuja, getStandardItems, createPujaItem } from '../controllers/pujaController';
 
 const router = express.Router();
 
@@ -105,6 +105,60 @@ router.post('/', createPuja);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/', getPujas);
+
+/**
+ * @swagger
+ * /api/pujas/items/standard:
+ *   get:
+ *     summary: Get standard list of Puja & Decoration Items
+ *     description: Returns a hardcoded standard list of items used across pujas.
+ *     tags: [Pujas]
+ *     responses:
+ *       200:
+ *         description: List of standard items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: object
+ *                     properties:
+ *                       en:
+ *                         type: string
+ *                         example: "Milk (Ksheera)"
+ *                   _id:
+ *                     type: string
+ *                     example: "64abc...1234"
+ */
+router.get('/items/standard', getStandardItems);
+
+/**
+ * @swagger
+ * /api/pujas/items/standard:
+ *   post:
+ *     summary: Create a new standard Puja Item
+ *     description: Creates a new item in the PujaItem collection.
+ *     tags: [Pujas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Coconut"
+ *     responses:
+ *       201:
+ *         description: Item successfully created
+ */
+router.post('/items/standard', createPujaItem);
 
 /**
  * @swagger

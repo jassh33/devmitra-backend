@@ -10,13 +10,11 @@ export type BookingStatus =
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 
-import { ILocalizedString } from './PujaType';
+import { IPujaItem } from './PujaItem';
 
-interface IBookingItem {
-    name: ILocalizedString;
-    quantity: number;
-    modifiedBy: 'customer' | 'vendor' | 'admin';
-}
+import { IPujaItemsBatch } from './PujaItemsBatch';
+
+// Removed IBookingItem interface since it's now handled in PujaItemsBatch
 
 export interface IBooking extends Document {
     customer: mongoose.Types.ObjectId;
@@ -27,7 +25,7 @@ export interface IBooking extends Document {
     date: string;
     time: string;
 
-    bookingItems: IBookingItem[];
+    pujaItemsBatchId?: mongoose.Types.ObjectId | any;
 
     vendorFee: number;
     totalAmount: number;
@@ -48,15 +46,7 @@ const LocalizedStringSchema = new Schema(
     { _id: false }
 );
 
-const BookingItemSchema = new Schema<IBookingItem>({
-    name: { type: LocalizedStringSchema, required: true },
-    quantity: { type: Number, required: true },
-    modifiedBy: {
-        type: String,
-        enum: ['customer', 'vendor', 'admin'],
-        required: true,
-    },
-});
+// Removed BookingItemSchema since it's now handled in PujaItemsBatch
 
 const BookingSchema = new Schema<IBooking>(
     {
@@ -85,7 +75,10 @@ const BookingSchema = new Schema<IBooking>(
             type: String,
             required: true,
         },
-        bookingItems: [BookingItemSchema],
+        pujaItemsBatchId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PujaItemsBatch',
+        },
         vendorFee: {
             type: Number,
             required: true,
@@ -116,20 +109,9 @@ const BookingSchema = new Schema<IBooking>(
     { timestamps: true }
 );
 
-import { autoTranslateContent } from '../utils/translate';
-
 BookingSchema.pre('save', async function (next) {
-    if (this.bookingItems && this.bookingItems.length > 0) {
-        for (let item of this.bookingItems) {
-            if (item.name && item.name.en && (this.isModified('bookingItems') || this.isNew)) {
-               if (!item.name.hi || !item.name.te) {
-                   const translated = await autoTranslateContent(item.name.en);
-                   item.name.hi = translated.hi;
-                   item.name.te = translated.te;
-               }
-            }
-        }
-    }
+    // Items now reference the PujaItem collection which inherently
+    // handles translations on creation/update. No need to translate names here.
     next();
 });
 

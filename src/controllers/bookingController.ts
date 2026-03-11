@@ -3,6 +3,7 @@ import Booking from '../models/Booking';
 import Availability from '../models/Availability';
 import User from '../models/User';
 import PujaType from '../models/PujaType';
+import PujaItemsBatch from '../models/PujaItemsBatch';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 /**
@@ -58,7 +59,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
  *                 items:
  *                   type: object
  *                   properties:
- *                     name:
+ *                     pujaItemId:
  *                       type: string
  *                     quantity:
  *                       type: number
@@ -101,19 +102,23 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 
             // If no custom items passed, use default items
             if (!bookingItems || bookingItems.length === 0) {
-                finalBookingItems = puja.defaultItems ? puja.defaultItems.map((item: any) => ({
-                    // For nested documents, we need to handle the structure. If item.name is already {en, hi, te}, great.
-                    // If it's a string, wrap it. Our PujaType stores it as LocalizedStringSchema.
-                    name: typeof item.name === 'string' ? { en: item.name } : item.name,
-                    quantity: item.defaultQuantity,
-                    modifiedBy: 'customer'
-                })) : [];
+                // If the PujaType has a default batch, fetch it
+                if (puja.defaultItemsBatchId) {
+                    const defaultBatch = await PujaItemsBatch.findById(puja.defaultItemsBatchId);
+                    if (defaultBatch) {
+                        finalBookingItems = defaultBatch.items.map((item: any) => ({
+                            pujaItemId: item.pujaItemId,
+                            quantity: item.quantity,
+                            modifiedBy: 'customer'
+                        }));
+                    }
+                }
             }
         } else {
             // Ensure if bookingItems are manually provided they are correctly formatted
             if (finalBookingItems.length > 0) {
                 finalBookingItems = finalBookingItems.map((item: any) => ({
-                    name: typeof item.name === 'string' ? { en: item.name } : item.name,
+                    pujaItemId: item.pujaItemId ?? item.id,
                     quantity: item.quantity,
                     modifiedBy: 'customer'
                 }));
@@ -143,6 +148,14 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 
         const totalAmount = pujaPrice + vendorFee;
 
+        // Create the Batch collection
+        let pujaItemsBatchId = null;
+        if (finalBookingItems.length > 0) {
+            const batch = new PujaItemsBatch({ items: finalBookingItems });
+            await batch.save();
+            pujaItemsBatchId = batch._id;
+        }
+
         const newBooking = await Booking.create({
             customer: customerId,
             vendor: vendorId || undefined,
@@ -151,7 +164,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
             time,
             vendorFee,
             totalAmount,
-            bookingItems: finalBookingItems,
+            pujaItemsBatchId,
             status: vendorId ? 'requested' : 'pending', // If no vendor, it's pending admin assignment
             paymentStatus: 'pending'
         });

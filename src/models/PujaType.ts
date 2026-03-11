@@ -7,10 +7,9 @@ export interface ILocalizedString {
     te?: string;
 }
 
-export interface IPujaItem {
-    name: ILocalizedString;
-    defaultQuantity: number;
-}
+import { IPujaItemsBatch } from './PujaItemsBatch';
+
+// Removed IPujaItemRef interface since it's now handled in PujaItemsBatch
 
 export interface IPujaType extends Document {
     name: ILocalizedString;
@@ -18,7 +17,7 @@ export interface IPujaType extends Document {
     basePrice: number;
     image: string;
     durationMinutes: number;
-    defaultItems: IPujaItem[];
+    defaultItemsBatchId?: mongoose.Types.ObjectId | any;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -33,10 +32,7 @@ const LocalizedStringSchema = new Schema(
     { _id: false }
 );
 
-const PujaItemSchema = new Schema<IPujaItem>({
-    name: { type: LocalizedStringSchema, required: true },
-    defaultQuantity: { type: Number, required: true, default: 1 },
-});
+// Removed PujaItemRefSchema since it's now handled in PujaItemsBatch
 
 const PujaTypeSchema = new Schema<IPujaType>(
     {
@@ -61,7 +57,10 @@ const PujaTypeSchema = new Schema<IPujaType>(
             required: true,
             default: 120,
         },
-        defaultItems: [PujaItemSchema],
+        defaultItemsBatchId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PujaItemsBatch',
+        },
         isActive: {
             type: Boolean,
             default: true,
@@ -96,16 +95,8 @@ PujaTypeSchema.pre('save', async function (next) {
             }
         }
 
-        // --- Translate each defaultItem name ---
-        if (this.defaultItems?.length > 0 && (this.isModified('defaultItems') || this.isNew)) {
-            for (const item of this.defaultItems) {
-                if (item.name?.en && (!item.name.hi || !item.name.te)) {
-                    const translated = await autoTranslateContent(item.name.en);
-                    item.name.hi = translated.hi;
-                    item.name.te = translated.te;
-                }
-            }
-        }
+        // Removed auto-translation of item names because they are now references
+        // to pre-translated PujaItems in the PujaItem collection.
 
         next();
     } catch (err: any) {

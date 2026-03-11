@@ -1,6 +1,7 @@
 import PujaType from '../models/PujaType';
 import PujaItem from '../models/PujaItem';
 import PujaItemsBatch from '../models/PujaItemsBatch';
+import { Request, Response, RequestHandler } from 'express';
 
 /**
  * @swagger
@@ -55,7 +56,7 @@ import PujaItemsBatch from '../models/PujaItemsBatch';
  *       500:
  *         description: Error creating puja
  */
-export const createPuja = async (req: Request, res: Response) => {
+export const createPuja: RequestHandler = async (req, res) => {
     try {
         const { name, description, basePrice, image, durationMinutes, defaultItems } = req.body;
 
@@ -103,7 +104,7 @@ export const createPuja = async (req: Request, res: Response) => {
  *       500:
  *         description: Error fetching pujas
  */
-export const getPujas = async (req: Request, res: Response) => {
+export const getPujas: RequestHandler = async (req, res) => {
     try {
         const pujas = await PujaType.find({ isActive: true });
         res.json(pujas);
@@ -140,11 +141,12 @@ export const getPujas = async (req: Request, res: Response) => {
  *       500:
  *         description: Error updating puja
  */
-export const updatePuja = async (req: Request, res: Response) => {
+export const updatePuja: RequestHandler<{id: string}> = async (req, res) => {
     try {
         const puja = await PujaType.findById(req.params.id);
         if (!puja) {
-            return res.status(404).json({ message: 'Puja not found' });
+            res.status(404).json({ message: 'Puja not found' });
+            return;
         }
 
         const { name, description, basePrice, image, durationMinutes, defaultItems, isActive } = req.body;
@@ -201,7 +203,7 @@ export const updatePuja = async (req: Request, res: Response) => {
  *       500:
  *         description: Error deleting puja
  */
-export const deletePuja = async (req: Request, res: Response) => {
+export const deletePuja: RequestHandler<{id: string}> = async (req, res) => {
     try {
         await PujaType.findByIdAndUpdate(req.params.id, { isActive: false });
         res.json({ message: 'Puja deactivated successfully' });
@@ -222,7 +224,7 @@ export const deletePuja = async (req: Request, res: Response) => {
  *       500:
  *         description: Error fetching items
  */
-export const getStandardItems = async (req: Request, res: Response) => {
+export const getStandardItems: RequestHandler = async (req, res) => {
     try {
         const items = await PujaItem.find({ isActive: true });
         res.json(items);
@@ -257,7 +259,7 @@ export const getStandardItems = async (req: Request, res: Response) => {
  *       500:
  *         description: Error creating item
  */
-export const createPujaItem = async (req: Request, res: Response) => {
+export const createPujaItem: RequestHandler = async (req, res) => {
     try {
         const { name } = req.body;
 

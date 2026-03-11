@@ -76,15 +76,8 @@ const migrate = async () => {
             const transDesc = await translateIfNeeded(tempPuja.description);
             if (transDesc) { puja.description = transDesc; updated = true; }
             
-            if (puja.defaultItems && puja.defaultItems.length > 0) {
-                for (let i = 0; i < puja.defaultItems.length; i++) {
-                    const transItem = await translateIfNeeded(puja.defaultItems[i].name);
-                    if (transItem) {
-                        puja.defaultItems[i].name = transItem;
-                        updated = true;
-                    }
-                }
-            }
+            // NOTE: Batch items migration handled separately or skipped 
+            // since they are isolated collections now
 
             if (updated) {
                 await puja.save();
@@ -132,15 +125,8 @@ const migrate = async () => {
         let bookingsUpdated = 0;
         for (const booking of bookings) {
             let updated = false;
-            if (booking.bookingItems && booking.bookingItems.length > 0) {
-                for (let i = 0; i < booking.bookingItems.length; i++) {
-                    const transName = await translateIfNeeded(booking.bookingItems[i].name);
-                    if (transName) {
-                        booking.bookingItems[i].name = transName;
-                        updated = true;
-                    }
-                }
-            }
+            // NOTE: Booking items batch migration handled separately or skipped 
+            // since they are isolated collections now
             if (updated) {
                 await booking.save();
                 bookingsUpdated++;

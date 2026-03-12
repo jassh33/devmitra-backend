@@ -6,6 +6,8 @@ import path from 'path';
 import { v2 as cloudinary } from "cloudinary"
 import CloudinaryProvider from '../providers/CloudinaryProvider'
 
+import mongoose from 'mongoose';
+
 import User from '../models/User';
 import PujaType from '../models/PujaType';
 import VendorPuja from '../models/VendorPuja';
@@ -13,6 +15,8 @@ import Availability from '../models/Availability';
 import Booking from '../models/Booking';
 import Payment from '../models/Payment';
 import HomeCard from '../models/HomeCard';
+
+const VendorAdmin = mongoose.models.VendorAdmin || mongoose.model('VendorAdmin', User.schema, 'users');
 
 AdminJS.registerAdapter({
     Resource: AdminJSMongoose.Resource,
@@ -109,6 +113,21 @@ const adminJs = new AdminJS({
             },
         },
         {
+            resource: VendorAdmin,
+            options: {
+                navigation: false,
+                actions: {
+                    search: {
+                        before: async (request: any) => {
+                            request.query = request.query || {};
+                            request.query['filters.role'] = 'vendor';
+                            return request;
+                        }
+                    }
+                }
+            }
+        },
+        {
             resource: Booking,
             options: {
                 navigation: { name: 'Booking Management', icon: 'Calendar' },
@@ -116,7 +135,9 @@ const adminJs = new AdminJS({
                     _id: { isVisible: { list: false, filter: false, show: true, edit: false } },
                     createdAt: { isVisible: { list: true, filter: true, show: true, edit: false } },
                     customer: { isTitle: true },
-                    vendor: {},
+                    vendor: {
+                        reference: 'VendorAdmin'
+                    },
                     puja: {},
                     date: {},
                     time: {},

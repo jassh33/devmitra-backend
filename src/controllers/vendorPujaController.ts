@@ -68,6 +68,19 @@ export const assignPujaToVendor = async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: List of pujas assigned to vendor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   vendor:
+ *                     type: string
+ *                   puja:
+ *                     $ref: '#/components/schemas/PujaType'
  *       500:
  *         description: Error fetching vendor pujas
  */

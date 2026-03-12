@@ -3,6 +3,7 @@ import Booking from '../models/Booking';
 import Availability from '../models/Availability';
 import User from '../models/User';
 import PujaType from '../models/PujaType';
+import PujaItem from '../models/PujaItem';
 import PujaItemsBatch from '../models/PujaItemsBatch';
 import { AuthRequest } from '../middleware/authMiddleware';
 
@@ -61,6 +62,9 @@ import { AuthRequest } from '../middleware/authMiddleware';
  *                   properties:
  *                     pujaItemId:
  *                       type: string
+ *                     customItemName:
+ *                       type: string
+ *                       description: 'If taking a new custom item from user'
  *                     quantity:
  *                       type: number
  *     responses:
@@ -114,15 +118,34 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
                     }
                 }
             }
-        } else {
-            // Ensure if bookingItems are manually provided they are correctly formatted
-            if (finalBookingItems.length > 0) {
-                finalBookingItems = finalBookingItems.map((item: any) => ({
-                    pujaItemId: item.pujaItemId ?? item.id,
-                    quantity: item.quantity,
-                    modifiedBy: 'customer'
-                }));
+        }
+
+        // Ensure if bookingItems are manually provided they are correctly formatted
+        if (bookingItems && bookingItems.length > 0) {
+            let processedBookingItems: any[] = [];
+            for (const item of bookingItems) {
+                if (item.pujaItemId || item.id) {
+                    processedBookingItems.push({
+                        pujaItemId: item.pujaItemId ?? item.id,
+                        quantity: Number(item.quantity) || 1,
+                        modifiedBy: "customer"
+                    });
+                } else if (item.customItemName) {
+                    let existingItem = await PujaItem.findOne({ "name.en": { $regex: new RegExp('^' + item.customItemName.trim() + '$', "i") } });
+                    if (!existingItem) {
+                        existingItem = await PujaItem.create({
+                            name: { en: item.customItemName.trim() },
+                            isActive: true
+                        });
+                    }
+                    processedBookingItems.push({
+                        pujaItemId: existingItem._id,
+                        quantity: Number(item.quantity) || 1,
+                        modifiedBy: "customer"
+                    });
+                }
             }
+            finalBookingItems = processedBookingItems;
         }
 
         // 2. If Vendor is selected (check availability)
@@ -194,9 +217,33 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Booking'
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/Booking'
+ *                   - type: object
+ *                     properties:
+ *                       vendor:
+ *                         type: object
+ *                         properties:
+ *                           firstName:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
+ *                           lastName:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
+ *                       puja:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
  *       500:
- *         description: Error fetching bookings
+ *         description: Server error
  */
 export const getMyBookings = async (req: AuthRequest, res: Response) => {
     try {

@@ -89,6 +89,53 @@ export const processPayment = async (req: AuthRequest, res: Response) => {
  *     responses:
  *       200:
  *         description: List of payments with populated booking nested data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   amount:
+ *                     type: number
+ *                   transactionId:
+ *                     type: string
+ *                   status:
+ *                     type: string
+ *                   booking:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                       time:
+ *                         type: string
+ *                       totalAmount:
+ *                         type: number
+ *                       status:
+ *                         type: string
+ *                       puja:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
+ *                       vendor:
+ *                         type: object
+ *                         properties:
+ *                           firstName:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
+ *                           lastName:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
  *       500:
  *         description: Server error
  */

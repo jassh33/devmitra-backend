@@ -54,6 +54,13 @@ const adminJs = new AdminJS({
                 editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'studyPlace.en', 'gender.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'uploadProfile'],
                 properties: {
                     __v: { isVisible: false },
+                    'firstName.en': { label: 'First Name (English)' },
+                    'lastName.en': { label: 'Last Name (English)' },
+                    'city.en': { label: 'City (English)' },
+                    'address.en': { label: 'Address (English)' },
+                    'poojariCategory.en': { label: 'Poojari Category (English)' },
+                    'studyPlace.en': { label: 'Study Place (English)' },
+                    'gender.en': { label: 'Gender (English)' },
                 },
             },
             features: [
@@ -215,6 +222,9 @@ const adminJs = new AdminJS({
 
                 properties: {
                     __v: { isVisible: false },
+                    'title.en': { label: 'Title (English)' },
+                    'description.en': { label: 'Description (English)' },
+                    'buttonText.en': { label: 'Button Text (English)' },
                 },
             },
 
@@ -247,6 +257,11 @@ const adminJs = new AdminJS({
                 listProperties: ['name.en', 'isActive', 'createdAt'],
                 showProperties: ['name.en', 'name.hi', 'name.te', 'isActive', 'createdAt'],
                 editProperties: ['name.en', 'name.hi', 'name.te', 'isActive'],
+                properties: {
+                    'name.en': { label: 'Name (English)' },
+                    'name.hi': { label: 'Name (Hindi)' },
+                    'name.te': { label: 'Name (Telugu)' },
+                },
             },
         },
             ],

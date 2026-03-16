@@ -127,6 +127,17 @@ const adminJs = new AdminJS({
             resource: VendorAdmin,
             options: {
                 navigation: false,
+                listProperties: ['firstName.en', 'lastName.en', 'phone', 'role', 'isApproved'],
+                showProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved', 'createdAt'],
+                editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved'],
+                properties: {
+                    __v: { isVisible: false },
+                    'firstName.en': { label: 'First Name (English)' },
+                    'lastName.en': { label: 'Last Name (English)' },
+                    'city.en': { label: 'City (English)' },
+                    'address.en': { label: 'Address (English)' },
+                    'poojariCategory.en': { label: 'Poojari Category (English)' },
+                },
                 actions: {
                     search: {
                         before: async (request: any) => {
@@ -142,6 +153,9 @@ const adminJs = new AdminJS({
             resource: Booking,
             options: {
                 navigation: { name: 'Booking Management', icon: 'Calendar' },
+                listProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'totalAmount', 'status', 'paymentStatus'],
+                showProperties: ['_id', 'customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus', 'createdAt', 'updatedAt'],
+                editProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus'],
                 properties: {
                     _id: { isVisible: { list: false, filter: false, show: true, edit: false } },
                     createdAt: { isVisible: { list: true, filter: true, show: true, edit: false } },
@@ -149,11 +163,6 @@ const adminJs = new AdminJS({
                     vendor: {
                         reference: 'VendorAdmin'
                     },
-                    puja: {},
-                    date: {},
-                    time: {},
-                    vendorFee: {},
-                    totalAmount: {},
                     status: {
                         availableValues: [
                             { value: 'pending', label: 'Pending' },
@@ -172,9 +181,6 @@ const adminJs = new AdminJS({
                         ],
                     },
                 },
-                listProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'totalAmount', 'status', 'paymentStatus'],
-                showProperties: ['_id', 'customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus', 'bookingItems', 'createdAt', 'updatedAt'],
-                editProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus', 'bookingItems'],
             },
         },
         {
@@ -248,6 +254,14 @@ const adminJs = new AdminJS({
             resource: PujaItemsBatch,
             options: {
                 navigation: { name: 'Puja Management', icon: 'Archive' },
+                listProperties: ['_id', 'createdAt'],
+                showProperties: ['_id', 'items', 'createdAt', 'updatedAt'],
+                editProperties: ['items'],
+                properties: {
+                    'items.pujaItemId': {
+                         reference: 'PujaItem'
+                     }
+                }
             },
         },
         {

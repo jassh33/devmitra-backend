@@ -15,7 +15,8 @@ import Availability from '../models/Availability';
 import Booking from '../models/Booking';
 import Payment from '../models/Payment';
 import HomeCard from '../models/HomeCard';
-
+import PujaItemsBatch from '../models/PujaItemsBatch';
+import PujaItem from '../models/PujaItem';
 const VendorAdmin = mongoose.models.VendorAdmin || mongoose.model('VendorAdmin', User.schema, 'users');
 
 AdminJS.registerAdapter({
@@ -229,6 +230,18 @@ const adminJs = new AdminJS({
                     },
                 }),
             ],
+        },
+        {
+            resource: PujaItemsBatch,
+            options: {
+                navigation: { name: 'Puja Management', icon: 'Archive' },
+            },
+        },
+        {
+            resource: PujaItem,
+            options: {
+                navigation: { name: 'Puja Management', icon: 'Box' },
+            },
         },
             ],
 

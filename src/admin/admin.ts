@@ -31,60 +31,76 @@ cloudinary.config({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SANITIZE HELPER
-// Recursively converts any {en, hi, te} localized object to its .en string.
-// Applied in list.after and show.after hooks so React NEVER receives an object.
+// Converts any {en, hi, te} object to its English string at the params level
 // ─────────────────────────────────────────────────────────────────────────────
 const sanitizeParams = (params: Record<string, any>): Record<string, any> => {
-    const sanitized: Record<string, any> = {};
+    const out: Record<string, any> = {};
     for (const key of Object.keys(params)) {
         const val = params[key];
         if (val !== null && val !== undefined && typeof val === 'object' && !Array.isArray(val) && 'en' in val) {
-            // Localized object → use English string
-            sanitized[key] = val.en ?? '';
+            out[key] = val.en ?? '';
         } else {
-            sanitized[key] = val;
+            out[key] = val;
         }
     }
-    return sanitized;
+    return out;
+};
+
+// Deep-sanitizes a single record JSON: params, title, and all populated sub-records
+const sanitizeRecord = (record: any): any => {
+    if (!record) return record;
+
+    // Sanitize flat params
+    if (record.params && typeof record.params === 'object') {
+        record.params = sanitizeParams(record.params);
+    }
+
+    // Title may be an {en,hi,te} object if isTitle property wasn't resolved
+    if (record.title && typeof record.title === 'object' && 'en' in record.title) {
+        record.title = record.title.en ?? String(record.id ?? '');
+    }
+
+    // Populated references may also carry localized params — recurse
+    if (record.populated && typeof record.populated === 'object') {
+        for (const refKey of Object.keys(record.populated)) {
+            if (record.populated[refKey]) {
+                record.populated[refKey] = sanitizeRecord(record.populated[refKey]);
+            }
+        }
+    }
+
+    return record;
 };
 
 const sanitizeListResponse = async (response: any) => {
-    if (response.records) {
-        response.records = response.records.map((record: any) => {
-            if (record.params) record.params = sanitizeParams(record.params);
-            return record;
-        });
+    if (Array.isArray(response.records)) {
+        response.records = response.records.map(sanitizeRecord);
     }
     return response;
 };
 
 const sanitizeShowResponse = async (response: any) => {
-    if (response.record?.params) {
-        response.record.params = sanitizeParams(response.record.params);
+    if (response.record) {
+        response.record = sanitizeRecord(response.record);
     }
     return response;
 };
 
-// Shared action hooks that sanitize localized fields for every resource
+// *** search is critical — it powers reference-field dropdowns ***
 const sanitizeActions = {
-    list: { after: sanitizeListResponse },
-    show: { after: sanitizeShowResponse },
-    new: { after: sanitizeShowResponse },
-    edit: { after: sanitizeShowResponse },
+    list:   { after: sanitizeListResponse },
+    search: { after: sanitizeListResponse },   // vendor / customer / puja pickers
+    show:   { after: sanitizeShowResponse },
+    new:    { after: sanitizeShowResponse },
+    edit:   { after: sanitizeShowResponse },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SHARED CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
 const HIDDEN: any = { isVisible: false };
 
 const adminJs = new AdminJS({
     resources: [
 
-        // ─────────────────────────────────────────────────────────────────────
         // USER
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: User,
             options: {
@@ -94,18 +110,10 @@ const adminJs = new AdminJS({
                 editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'studyPlace.en', 'gender.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'uploadProfile'],
                 filterProperties: ['phone', 'email', 'role', 'isApproved', 'isBlocked'],
                 properties: {
-                    firstName: HIDDEN,
-                    lastName: HIDDEN,
-                    city: HIDDEN,
-                    address: HIDDEN,
-                    poojariCategory: HIDDEN,
-                    studyPlace: HIDDEN,
-                    gender: HIDDEN,
-                    languages: HIDDEN,
-                    __v: HIDDEN,
-                    otp: HIDDEN,
-                    otpExpiry: HIDDEN,
-                    // isTitle on phone — used as label when Booking populates customer/vendor
+                    firstName: HIDDEN, lastName: HIDDEN, city: HIDDEN,
+                    address: HIDDEN, poojariCategory: HIDDEN, studyPlace: HIDDEN,
+                    gender: HIDDEN, languages: HIDDEN, __v: HIDDEN,
+                    otp: HIDDEN, otpExpiry: HIDDEN,
                     phone: { isTitle: true, label: 'Phone' },
                     'firstName.en': { label: 'First Name' },
                     'lastName.en': { label: 'Last Name' },
@@ -120,22 +128,14 @@ const adminJs = new AdminJS({
             features: [
                 uploadFeature({
                     provider: new CloudinaryProvider('dev_mitra_uploads'),
-                    properties: {
-                        key: 'profileImage',
-                        file: 'uploadProfile',
-                    },
-                    uploadPath: (record, filename) =>
-                        `dev_mitra_uploads/profiles/${Date.now()}-${filename}`,
-                    validation: {
-                        mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
-                    },
+                    properties: { key: 'profileImage', file: 'uploadProfile' },
+                    uploadPath: (record, filename) => `dev_mitra_uploads/profiles/${Date.now()}-${filename}`,
+                    validation: { mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'] },
                 }),
             ],
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // VENDOR ADMIN (alias of User, vendors only, used by Booking reference)
-        // ─────────────────────────────────────────────────────────────────────
+        // VENDOR ADMIN (alias of User filtered to vendors — used by Booking.vendor reference)
         {
             resource: VendorAdmin,
             options: {
@@ -145,20 +145,10 @@ const adminJs = new AdminJS({
                 editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved'],
                 filterProperties: ['phone', 'email', 'isApproved'],
                 properties: {
-                    firstName: HIDDEN,
-                    lastName: HIDDEN,
-                    city: HIDDEN,
-                    address: HIDDEN,
-                    poojariCategory: HIDDEN,
-                    studyPlace: HIDDEN,
-                    gender: HIDDEN,
-                    languages: HIDDEN,
-                    __v: HIDDEN,
-                    otp: HIDDEN,
-                    otpExpiry: HIDDEN,
-                    role: HIDDEN,
-                    isBlocked: HIDDEN,
-                    // isTitle on phone
+                    firstName: HIDDEN, lastName: HIDDEN, city: HIDDEN,
+                    address: HIDDEN, poojariCategory: HIDDEN, studyPlace: HIDDEN,
+                    gender: HIDDEN, languages: HIDDEN, __v: HIDDEN,
+                    otp: HIDDEN, otpExpiry: HIDDEN, role: HIDDEN, isBlocked: HIDDEN,
                     phone: { isTitle: true, label: 'Phone' },
                     'firstName.en': { label: 'First Name' },
                     'lastName.en': { label: 'Last Name' },
@@ -169,7 +159,7 @@ const adminJs = new AdminJS({
                 actions: {
                     ...sanitizeActions,
                     list: {
-                        ...sanitizeActions.list,
+                        after: sanitizeListResponse,
                         before: async (request: any) => {
                             request.query = request.query || {};
                             request.query['filters.role'] = 'vendor';
@@ -177,19 +167,18 @@ const adminJs = new AdminJS({
                         },
                     },
                     search: {
+                        after: sanitizeListResponse,
                         before: async (request: any) => {
                             request.query = request.query || {};
                             request.query['filters.role'] = 'vendor';
                             return request;
                         },
                     },
-                }
-            }
+                },
+            },
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // PUJA TYPE
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: PujaType,
             options: {
@@ -199,9 +188,7 @@ const adminJs = new AdminJS({
                 editProperties: ['name.en', 'description.en', 'uploadPujaImage', 'basePrice', 'durationMinutes', 'isActive'],
                 filterProperties: ['isActive', 'basePrice'],
                 properties: {
-                    name: HIDDEN,
-                    description: HIDDEN,
-                    __v: HIDDEN,
+                    name: HIDDEN, description: HIDDEN, __v: HIDDEN,
                     image: { isVisible: { list: true, show: true, edit: false, filter: false } },
                     'name.en': { label: 'Name', isRequired: true, isTitle: true },
                     'description.en': { label: 'Description', isRequired: true },
@@ -211,22 +198,14 @@ const adminJs = new AdminJS({
             features: [
                 uploadFeature({
                     provider: new CloudinaryProvider('dev_mitra_uploads'),
-                    properties: {
-                        key: 'image',
-                        file: 'uploadPujaImage',
-                    },
-                    uploadPath: (record, filename) =>
-                        `dev_mitra_uploads/pujas/${Date.now()}-${filename}`,
-                    validation: {
-                        mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
-                    },
+                    properties: { key: 'image', file: 'uploadPujaImage' },
+                    uploadPath: (record, filename) => `dev_mitra_uploads/pujas/${Date.now()}-${filename}`,
+                    validation: { mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'] },
                 }),
             ],
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // PUJA ITEM
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: PujaItem,
             options: {
@@ -236,17 +215,14 @@ const adminJs = new AdminJS({
                 editProperties: ['name.en', 'isActive'],
                 filterProperties: ['isActive'],
                 properties: {
-                    name: HIDDEN,
-                    __v: HIDDEN,
+                    name: HIDDEN, __v: HIDDEN,
                     'name.en': { label: 'Name', isRequired: true, isTitle: true },
                 },
                 actions: sanitizeActions,
             },
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // PUJA ITEMS BATCH
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: PujaItemsBatch,
             options: {
@@ -266,9 +242,7 @@ const adminJs = new AdminJS({
             },
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // VENDOR PUJA
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: VendorPuja,
             options: {
@@ -277,9 +251,7 @@ const adminJs = new AdminJS({
             },
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // BOOKING
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: Booking,
             options: {
@@ -318,37 +290,27 @@ const adminJs = new AdminJS({
             },
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // AVAILABILITY
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: Availability,
             options: {
                 navigation: { name: 'Vendor Management', icon: 'Clock' },
-                properties: {
-                    date: { isTitle: true },
-                },
+                properties: { date: { isTitle: true } },
                 actions: sanitizeActions,
             },
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // PAYMENT
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: Payment,
             options: {
                 navigation: { name: 'Finance', icon: 'CreditCard' },
-                properties: {
-                    transactionId: { isTitle: true },
-                },
+                properties: { transactionId: { isTitle: true } },
                 actions: sanitizeActions,
             },
         },
 
-        // ─────────────────────────────────────────────────────────────────────
         // HOME CARD
-        // ─────────────────────────────────────────────────────────────────────
         {
             resource: HomeCard,
             options: {
@@ -358,10 +320,7 @@ const adminJs = new AdminJS({
                 editProperties: ['title.en', 'description.en', 'buttonText.en', 'uploadImage', 'cardColor', 'isActive'],
                 filterProperties: ['isActive', 'cardColor'],
                 properties: {
-                    title: HIDDEN,
-                    description: HIDDEN,
-                    buttonText: HIDDEN,
-                    __v: HIDDEN,
+                    title: HIDDEN, description: HIDDEN, buttonText: HIDDEN, __v: HIDDEN,
                     image: { isVisible: { list: true, show: true, edit: false, filter: false } },
                     'title.en': { label: 'Title', isTitle: true },
                     'description.en': { label: 'Description' },
@@ -372,15 +331,9 @@ const adminJs = new AdminJS({
             features: [
                 uploadFeature({
                     provider: new CloudinaryProvider('dev_mitra_uploads'),
-                    properties: {
-                        key: 'image',
-                        file: 'uploadImage',
-                    },
-                    uploadPath: (record, filename) =>
-                        `dev_mitra_uploads/home/${Date.now()}-${filename}`,
-                    validation: {
-                        mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
-                    },
+                    properties: { key: 'image', file: 'uploadImage' },
+                    uploadPath: (record, filename) => `dev_mitra_uploads/home/${Date.now()}-${filename}`,
+                    validation: { mimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'] },
                 }),
             ],
         },
@@ -388,10 +341,7 @@ const adminJs = new AdminJS({
     ],
 
     rootPath: '/admin',
-
-    branding: {
-        companyName: 'DevMitra Admin',
-    },
+    branding: { companyName: 'DevMitra Admin' },
 });
 
 export const buildAdminRouter = () => {
@@ -399,28 +349,16 @@ export const buildAdminRouter = () => {
         adminJs,
         {
             authenticate: async (email, password) => {
-                const admin = await User.findOne({
-                    email,
-                    role: 'admin',
-                });
-
+                const admin = await User.findOne({ email, role: 'admin' });
                 if (!admin) return null;
-
-                if (password === process.env.ADMIN_PASSWORD) {
-                    return admin;
-                }
-
+                if (password === process.env.ADMIN_PASSWORD) return admin;
                 return null;
             },
             cookieName: 'devmitra-admin',
             cookiePassword: 'supersecretcookie',
         },
         null,
-        {
-            resave: false,
-            saveUninitialized: true,
-            secret: 'supersecret',
-        }
+        { resave: false, saveUninitialized: true, secret: 'supersecret' }
     );
 };
 

@@ -49,6 +49,9 @@ const adminJs = new AdminJS({
             resource: User,
             options: {
                 navigation: { name: 'User Management', icon: 'User' },
+                listProperties: ['firstName.en', 'lastName.en', 'phone', 'role', 'isApproved', 'createdAt'],
+                showProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'studyPlace.en', 'gender.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'uploadProfile', 'profileImage', 'createdAt'],
+                editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'studyPlace.en', 'gender.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'uploadProfile'],
                 properties: {
                     __v: { isVisible: false },
                 },
@@ -78,9 +81,9 @@ const adminJs = new AdminJS({
             resource: PujaType,
             options: {
                 navigation: { name: 'Puja Management', icon: 'Book' },
-                listProperties: ['name', 'image', 'basePrice', 'isActive'],
-                showProperties: ['name', 'description', 'image', 'basePrice', 'durationMinutes', 'defaultItems', 'isActive', 'createdAt'],
-                editProperties: ['name', 'description', 'uploadPujaImage', 'basePrice', 'durationMinutes', 'defaultItems', 'isActive'],
+                listProperties: ['name.en', 'image', 'basePrice', 'isActive'],
+                showProperties: ['name.en', 'description.en', 'image', 'basePrice', 'durationMinutes', 'defaultItems', 'isActive', 'createdAt'],
+                editProperties: ['name.en', 'description.en', 'uploadPujaImage', 'basePrice', 'durationMinutes', 'defaultItems', 'isActive'],
                 properties: {
                     __v: { isVisible: false },
                     image: { isVisible: { list: true, show: true, edit: false, filter: false } },
@@ -185,16 +188,16 @@ const adminJs = new AdminJS({
                 navigation: { name: 'Content Management', icon: 'Home' },
 
                 listProperties: [
-                    'title',
+                    'title.en',
                     'image',
                     'cardColor',
                     'isActive',
                 ],
 
                 showProperties: [
-                    'title',
-                    'description',
-                    'buttonText',
+                    'title.en',
+                    'description.en',
+                    'buttonText.en',
                     'uploadImage',
                     'cardColor',
                     'isActive',
@@ -202,9 +205,9 @@ const adminJs = new AdminJS({
                 ],
 
                 editProperties: [
-                    'title',
-                    'description',
-                    'buttonText',
+                    'title.en',
+                    'description.en',
+                    'buttonText.en',
                     'uploadImage',
                     'cardColor',
                     'isActive',
@@ -241,6 +244,9 @@ const adminJs = new AdminJS({
             resource: PujaItem,
             options: {
                 navigation: { name: 'Puja Management', icon: 'Box' },
+                listProperties: ['name.en', 'isActive', 'createdAt'],
+                showProperties: ['name.en', 'name.hi', 'name.te', 'isActive', 'createdAt'],
+                editProperties: ['name.en', 'name.hi', 'name.te', 'isActive'],
             },
         },
             ],

@@ -17,10 +17,6 @@ import HomeCard from '../models/HomeCard';
 import PujaItemsBatch from '../models/PujaItemsBatch';
 import PujaItem from '../models/PujaItem';
 
-/**
- * VendorAdmin is a filtered alias of User model scoped to vendors only.
- * It is used by Booking.vendor reference so AdminJS can pick vendors.
- */
 const VendorAdmin = mongoose.models.VendorAdmin || mongoose.model('VendorAdmin', User.schema, 'users');
 
 AdminJS.registerAdapter({
@@ -34,36 +30,70 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-/**
- * IMPORTANT: For all models that contain LocalizedString ({en, hi, te}) sub-documents,
- * we must HIDE the ROOT property so AdminJS never tries to render the nested object directly.
- * This prevents React error #31 ("Objects are not valid as a React child").
- *
- * The pattern is:
- *   properties: {
- *     myLocalizedField: { isVisible: false },            // hide the root object
- *     'myLocalizedField.en': { label: 'My Field' },      // expose only the English string
- *   }
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// SANITIZE HELPER
+// Recursively converts any {en, hi, te} localized object to its .en string.
+// Applied in list.after and show.after hooks so React NEVER receives an object.
+// ─────────────────────────────────────────────────────────────────────────────
+const sanitizeParams = (params: Record<string, any>): Record<string, any> => {
+    const sanitized: Record<string, any> = {};
+    for (const key of Object.keys(params)) {
+        const val = params[key];
+        if (val !== null && val !== undefined && typeof val === 'object' && !Array.isArray(val) && 'en' in val) {
+            // Localized object → use English string
+            sanitized[key] = val.en ?? '';
+        } else {
+            sanitized[key] = val;
+        }
+    }
+    return sanitized;
+};
 
+const sanitizeListResponse = async (response: any) => {
+    if (response.records) {
+        response.records = response.records.map((record: any) => {
+            if (record.params) record.params = sanitizeParams(record.params);
+            return record;
+        });
+    }
+    return response;
+};
+
+const sanitizeShowResponse = async (response: any) => {
+    if (response.record?.params) {
+        response.record.params = sanitizeParams(response.record.params);
+    }
+    return response;
+};
+
+// Shared action hooks that sanitize localized fields for every resource
+const sanitizeActions = {
+    list: { after: sanitizeListResponse },
+    show: { after: sanitizeShowResponse },
+    new: { after: sanitizeShowResponse },
+    edit: { after: sanitizeShowResponse },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
 const HIDDEN: any = { isVisible: false };
 
 const adminJs = new AdminJS({
     resources: [
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // USER
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: User,
             options: {
                 navigation: { name: 'User Management', icon: 'User' },
-                listProperties: ['firstName.en', 'lastName.en', 'phone', 'email', 'role', 'isApproved', 'createdAt'],
-                showProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'studyPlace.en', 'gender.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'profileImage', 'createdAt'],
+                listProperties: ['phone', 'email', 'role', 'isApproved', 'createdAt'],
+                showProperties: ['phone', 'email', 'role', 'firstName.en', 'lastName.en', 'city.en', 'address.en', 'poojariCategory.en', 'studyPlace.en', 'gender.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'profileImage', 'createdAt'],
                 editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'role', 'city.en', 'address.en', 'poojariCategory.en', 'studyPlace.en', 'gender.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'uploadProfile'],
                 filterProperties: ['phone', 'email', 'role', 'isApproved', 'isBlocked'],
                 properties: {
-                    // Hide root localized objects
                     firstName: HIDDEN,
                     lastName: HIDDEN,
                     city: HIDDEN,
@@ -72,13 +102,11 @@ const adminJs = new AdminJS({
                     studyPlace: HIDDEN,
                     gender: HIDDEN,
                     languages: HIDDEN,
-                    // Hide internal fields
                     __v: HIDDEN,
                     otp: HIDDEN,
                     otpExpiry: HIDDEN,
-                    // phone is isTitle so AdminJS uses it as the record label in reference dropdowns
-                    phone: { isTitle: true },
-                    // Label the English sub-fields
+                    // isTitle on phone — used as label when Booking populates customer/vendor
+                    phone: { isTitle: true, label: 'Phone' },
                     'firstName.en': { label: 'First Name' },
                     'lastName.en': { label: 'Last Name' },
                     'city.en': { label: 'City' },
@@ -87,6 +115,7 @@ const adminJs = new AdminJS({
                     'studyPlace.en': { label: 'Study Place' },
                     'gender.en': { label: 'Gender' },
                 },
+                actions: sanitizeActions,
             },
             features: [
                 uploadFeature({
@@ -104,20 +133,18 @@ const adminJs = new AdminJS({
             ],
         },
 
-        // =============================================
-        // VENDOR ADMIN (alias of User, vendors only)
-        // Kept hidden from nav but registered so Booking can reference it
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
+        // VENDOR ADMIN (alias of User, vendors only, used by Booking reference)
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: VendorAdmin,
             options: {
                 navigation: { name: 'Vendor Management', icon: 'UserCheck' },
-                listProperties: ['firstName.en', 'lastName.en', 'phone', 'email', 'isApproved'],
-                showProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved', 'createdAt'],
+                listProperties: ['phone', 'email', 'isApproved'],
+                showProperties: ['phone', 'email', 'firstName.en', 'lastName.en', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved', 'createdAt'],
                 editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved'],
                 filterProperties: ['phone', 'email', 'isApproved'],
                 properties: {
-                    // Hide root localized objects
                     firstName: HIDDEN,
                     lastName: HIDDEN,
                     city: HIDDEN,
@@ -126,15 +153,13 @@ const adminJs = new AdminJS({
                     studyPlace: HIDDEN,
                     gender: HIDDEN,
                     languages: HIDDEN,
-                    // Hide internal fields
                     __v: HIDDEN,
                     otp: HIDDEN,
                     otpExpiry: HIDDEN,
                     role: HIDDEN,
                     isBlocked: HIDDEN,
-                    // phone is isTitle so AdminJS uses it as the record label in reference dropdowns
-                    phone: { isTitle: true },
-                    // Label the English sub-fields
+                    // isTitle on phone
+                    phone: { isTitle: true, label: 'Phone' },
                     'firstName.en': { label: 'First Name' },
                     'lastName.en': { label: 'Last Name' },
                     'city.en': { label: 'City' },
@@ -142,29 +167,29 @@ const adminJs = new AdminJS({
                     'poojariCategory.en': { label: 'Poojari Category' },
                 },
                 actions: {
+                    ...sanitizeActions,
                     list: {
+                        ...sanitizeActions.list,
                         before: async (request: any) => {
                             request.query = request.query || {};
-                            if (!request.query['filters.role']) {
-                                request.query['filters.role'] = 'vendor';
-                            }
+                            request.query['filters.role'] = 'vendor';
                             return request;
-                        }
+                        },
                     },
                     search: {
                         before: async (request: any) => {
                             request.query = request.query || {};
                             request.query['filters.role'] = 'vendor';
                             return request;
-                        }
-                    }
+                        },
+                    },
                 }
             }
         },
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // PUJA TYPE
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: PujaType,
             options: {
@@ -174,16 +199,14 @@ const adminJs = new AdminJS({
                 editProperties: ['name.en', 'description.en', 'uploadPujaImage', 'basePrice', 'durationMinutes', 'isActive'],
                 filterProperties: ['isActive', 'basePrice'],
                 properties: {
-                    // Hide root localized objects
                     name: HIDDEN,
                     description: HIDDEN,
-                    // Hide internal
                     __v: HIDDEN,
                     image: { isVisible: { list: true, show: true, edit: false, filter: false } },
-                    // name.en is isTitle so AdminJS uses it as record label in Booking puja dropdown
-                    'name.en': { label: 'Name (English)', isRequired: true, isTitle: true },
-                    'description.en': { label: 'Description (English)', isRequired: true },
+                    'name.en': { label: 'Name', isRequired: true, isTitle: true },
+                    'description.en': { label: 'Description', isRequired: true },
                 },
+                actions: sanitizeActions,
             },
             features: [
                 uploadFeature({
@@ -201,88 +224,78 @@ const adminJs = new AdminJS({
             ],
         },
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // PUJA ITEM
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: PujaItem,
             options: {
                 navigation: { name: 'Puja Management', icon: 'Box' },
                 listProperties: ['name.en', 'isActive', 'createdAt'],
-                showProperties: ['name.en', 'name.hi', 'name.te', 'isActive', 'createdAt'],
+                showProperties: ['name.en', 'isActive', 'createdAt'],
                 editProperties: ['name.en', 'isActive'],
                 filterProperties: ['isActive'],
                 properties: {
-                    // Hide root localized object
                     name: HIDDEN,
                     __v: HIDDEN,
-                    // name.en is isTitle so AdminJS uses it as the label in PujaItemsBatch item dropdowns
-                    'name.en': { label: 'Name (English)', isRequired: true, isTitle: true },
-                    'name.hi': { label: 'Name (Hindi)' },
-                    'name.te': { label: 'Name (Telugu)' },
+                    'name.en': { label: 'Name', isRequired: true, isTitle: true },
                 },
+                actions: sanitizeActions,
             },
         },
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // PUJA ITEMS BATCH
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: PujaItemsBatch,
             options: {
                 navigation: { name: 'Puja Management', icon: 'Archive' },
                 listProperties: ['_id', 'createdAt'],
-                showProperties: ['_id', 'items.pujaItemId', 'items.quantity', 'items.modifiedBy', 'createdAt', 'updatedAt'],
+                showProperties: ['_id', 'items.pujaItemId', 'items.quantity', 'items.modifiedBy', 'createdAt'],
                 editProperties: ['items.pujaItemId', 'items.quantity', 'items.modifiedBy'],
                 filterProperties: ['createdAt'],
                 properties: {
                     __v: HIDDEN,
-                    // Map the reference correctly so AdminJS shows item picker not raw object
-                    'items.pujaItemId': {
-                        reference: 'PujaItem',
-                        label: 'Puja Item',
-                    },
+                    _id: { isTitle: true, label: 'Batch ID' },
+                    'items.pujaItemId': { reference: 'PujaItem', label: 'Puja Item' },
                     'items.quantity': { label: 'Quantity' },
                     'items.modifiedBy': { label: 'Modified By' },
                 },
+                actions: sanitizeActions,
             },
         },
 
-        // =============================================
-        // VENDOR PUJA (assignments)
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
+        // VENDOR PUJA
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: VendorPuja,
             options: {
                 navigation: { name: 'Vendor Management', icon: 'BookOpen' },
+                actions: sanitizeActions,
             },
         },
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // BOOKING
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: Booking,
             options: {
                 navigation: { name: 'Booking Management', icon: 'Calendar' },
                 listProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'totalAmount', 'status', 'paymentStatus', 'createdAt'],
-                showProperties: ['_id', 'customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus', 'pujaItemsBatchId', 'availability', 'createdAt', 'updatedAt'],
+                showProperties: ['_id', 'customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus', 'pujaItemsBatchId', 'createdAt', 'updatedAt'],
                 editProperties: ['customer', 'vendor', 'puja', 'date', 'time', 'vendorFee', 'totalAmount', 'status', 'paymentStatus'],
                 filterProperties: ['status', 'paymentStatus', 'date'],
                 properties: {
                     __v: HIDDEN,
                     _id: { isVisible: { list: false, filter: false, show: true, edit: false } },
-                    createdAt: { isVisible: { list: true, filter: true, show: true, edit: false } },
+                    createdAt: { isVisible: { list: true, filter: true, show: true, edit: false }, isTitle: true },
                     updatedAt: { isVisible: { list: false, filter: false, show: true, edit: false } },
-                    customer: {
-                        reference: 'User',
-                    },
-                    vendor: {
-                        reference: 'VendorAdmin',
-                    },
-                    puja: {
-                        reference: 'PujaType',
-                    },
+                    customer: { reference: 'User' },
+                    vendor: { reference: 'VendorAdmin' },
+                    puja: { reference: 'PujaType' },
                     status: {
                         availableValues: [
                             { value: 'pending', label: 'Pending' },
@@ -301,32 +314,41 @@ const adminJs = new AdminJS({
                         ],
                     },
                 },
+                actions: sanitizeActions,
             },
         },
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // AVAILABILITY
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: Availability,
             options: {
                 navigation: { name: 'Vendor Management', icon: 'Clock' },
+                properties: {
+                    date: { isTitle: true },
+                },
+                actions: sanitizeActions,
             },
         },
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // PAYMENT
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: Payment,
             options: {
                 navigation: { name: 'Finance', icon: 'CreditCard' },
+                properties: {
+                    transactionId: { isTitle: true },
+                },
+                actions: sanitizeActions,
             },
         },
 
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         // HOME CARD
-        // =============================================
+        // ─────────────────────────────────────────────────────────────────────
         {
             resource: HomeCard,
             options: {
@@ -336,17 +358,16 @@ const adminJs = new AdminJS({
                 editProperties: ['title.en', 'description.en', 'buttonText.en', 'uploadImage', 'cardColor', 'isActive'],
                 filterProperties: ['isActive', 'cardColor'],
                 properties: {
-                    // Hide root localized objects
                     title: HIDDEN,
                     description: HIDDEN,
                     buttonText: HIDDEN,
                     __v: HIDDEN,
                     image: { isVisible: { list: true, show: true, edit: false, filter: false } },
-                    // Label the English sub-fields
-                    'title.en': { label: 'Title' },
+                    'title.en': { label: 'Title', isTitle: true },
                     'description.en': { label: 'Description' },
                     'buttonText.en': { label: 'Button Text' },
                 },
+                actions: sanitizeActions,
             },
             features: [
                 uploadFeature({

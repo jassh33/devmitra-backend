@@ -20,8 +20,9 @@ const app = express();
 const adminRouter = buildAdminRouter();
 
 app.use(cors());
+app.use(adminJs.options.rootPath, adminRouter);
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 app.use(
     '/public',
     express.static(path.join(__dirname, '../public'))
@@ -37,8 +38,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/api/customers', customerRoutes);
-app.use(adminJs.options.rootPath, adminRouter);
-
 app.get('/', (req, res) => {
     res.json({ message: 'Dev Mitra Backend Running 🚀' });
 });

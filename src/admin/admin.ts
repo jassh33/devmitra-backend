@@ -76,6 +76,8 @@ const adminJs = new AdminJS({
                     __v: HIDDEN,
                     otp: HIDDEN,
                     otpExpiry: HIDDEN,
+                    // phone is isTitle so AdminJS uses it as the record label in reference dropdowns
+                    phone: { isTitle: true },
                     // Label the English sub-fields
                     'firstName.en': { label: 'First Name' },
                     'lastName.en': { label: 'Last Name' },
@@ -130,6 +132,8 @@ const adminJs = new AdminJS({
                     otpExpiry: HIDDEN,
                     role: HIDDEN,
                     isBlocked: HIDDEN,
+                    // phone is isTitle so AdminJS uses it as the record label in reference dropdowns
+                    phone: { isTitle: true },
                     // Label the English sub-fields
                     'firstName.en': { label: 'First Name' },
                     'lastName.en': { label: 'Last Name' },
@@ -176,8 +180,8 @@ const adminJs = new AdminJS({
                     // Hide internal
                     __v: HIDDEN,
                     image: { isVisible: { list: true, show: true, edit: false, filter: false } },
-                    // Label the English sub-fields
-                    'name.en': { label: 'Name (English)', isRequired: true },
+                    // name.en is isTitle so AdminJS uses it as record label in Booking puja dropdown
+                    'name.en': { label: 'Name (English)', isRequired: true, isTitle: true },
                     'description.en': { label: 'Description (English)', isRequired: true },
                 },
             },
@@ -212,8 +216,8 @@ const adminJs = new AdminJS({
                     // Hide root localized object
                     name: HIDDEN,
                     __v: HIDDEN,
-                    // Label the English sub-field
-                    'name.en': { label: 'Name (English)', isRequired: true },
+                    // name.en is isTitle so AdminJS uses it as the label in PujaItemsBatch item dropdowns
+                    'name.en': { label: 'Name (English)', isRequired: true, isTitle: true },
                     'name.hi': { label: 'Name (Hindi)' },
                     'name.te': { label: 'Name (Telugu)' },
                 },

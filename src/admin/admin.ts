@@ -136,19 +136,22 @@ const adminJs = new AdminJS({
         },
 
         // VENDOR ADMIN (alias of User filtered to vendors — used by Booking.vendor reference)
+        // Vendors are created through the normal User registration flow (role='vendor').
+        // This resource is READ + EDIT + APPROVE only — new/delete are disabled to prevent
+        // schema validation errors (missing required fields like phone, role, otp).
         {
             resource: VendorAdmin,
             options: {
                 navigation: { name: 'Vendor Management', icon: 'UserCheck' },
-                listProperties: ['phone', 'email', 'isApproved'],
-                showProperties: ['phone', 'email', 'firstName.en', 'lastName.en', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved', 'createdAt'],
-                editProperties: ['firstName.en', 'lastName.en', 'email', 'phone', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved'],
-                filterProperties: ['phone', 'email', 'isApproved'],
+                listProperties: ['phone', 'email', 'isApproved', 'isBlocked'],
+                showProperties: ['phone', 'email', 'firstName.en', 'lastName.en', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved', 'isBlocked', 'createdAt'],
+                editProperties: ['firstName.en', 'lastName.en', 'email', 'city.en', 'address.en', 'poojariCategory.en', 'experience', 'fee', 'isApproved', 'isBlocked'],
+                filterProperties: ['phone', 'email', 'isApproved', 'isBlocked'],
                 properties: {
                     firstName: HIDDEN, lastName: HIDDEN, city: HIDDEN,
                     address: HIDDEN, poojariCategory: HIDDEN, studyPlace: HIDDEN,
                     gender: HIDDEN, languages: HIDDEN, __v: HIDDEN,
-                    otp: HIDDEN, otpExpiry: HIDDEN, role: HIDDEN, isBlocked: HIDDEN,
+                    otp: HIDDEN, otpExpiry: HIDDEN, role: HIDDEN,
                     phone: { isTitle: true, label: 'Phone' },
                     'firstName.en': { label: 'First Name' },
                     'lastName.en': { label: 'Last Name' },
@@ -157,7 +160,11 @@ const adminJs = new AdminJS({
                     'poojariCategory.en': { label: 'Poojari Category' },
                 },
                 actions: {
-                    ...sanitizeActions,
+                    // Disable create — vendors register through the app as users
+                    new: { isAccessible: false },
+                    // Disable delete — delete from User Management instead
+                    delete: { isAccessible: false },
+                    bulkDelete: { isAccessible: false },
                     list: {
                         after: sanitizeListResponse,
                         before: async (request: any) => {
@@ -174,6 +181,8 @@ const adminJs = new AdminJS({
                             return request;
                         },
                     },
+                    show:   { after: sanitizeShowResponse },
+                    edit:   { after: sanitizeShowResponse },
                 },
             },
         },

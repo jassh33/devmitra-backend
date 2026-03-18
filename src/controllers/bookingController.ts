@@ -397,3 +397,204 @@ export const assignVendor = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error assigning vendor' });
     }
 };
+
+/**
+ * @swagger
+ * /api/bookings/{id}/complete:
+ *   patch:
+ *     summary: Vendor marks a booking as completed
+ *     description: |
+ *       Allows the assigned vendor (Pandit) to mark one of their accepted bookings as completed.
+ *       Only the vendor who is assigned to the booking can complete it, and only if its current
+ *       status is `accepted`.
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the booking to mark as completed
+ *         schema:
+ *           type: string
+ *           example: "64abc123def456789012abcd"
+ *     responses:
+ *       200:
+ *         description: Booking marked as completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Booking'
+ *             example:
+ *               _id: "64abc123def456789012abcd"
+ *               customer: "64cus123def456789012cust"
+ *               vendor: "64ven123def456789012vend"
+ *               puja: "64puj123def456789012puja"
+ *               date: "2025-12-24"
+ *               time: "09:00 AM - 11:00 AM"
+ *               vendorFee: 500
+ *               totalAmount: 1500
+ *               status: "completed"
+ *               paymentStatus: "paid"
+ *               createdAt: "2025-12-20T10:00:00.000Z"
+ *               updatedAt: "2025-12-24T11:00:00.000Z"
+ *       400:
+ *         description: Booking is not in 'accepted' state and cannot be completed
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Only accepted bookings can be marked as completed"
+ *       404:
+ *         description: Booking not found or not assigned to the requesting vendor
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Booking not found or not assigned to you"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Error completing booking"
+ */
+export const markBookingCompleted = async (req: AuthRequest, res: Response) => {
+    try {
+        const vendorId = req.user?.id || req.user?._id;
+
+        // Find the booking that belongs to this vendor
+        const booking = await Booking.findOne({
+            _id: req.params.id,
+            vendor: vendorId,
+        });
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found or not assigned to you' });
+        }
+
+        // Only allow completing bookings that are in 'accepted' state
+        if (booking.status !== 'accepted') {
+            return res.status(400).json({ message: "Only accepted bookings can be marked as completed" });
+        }
+
+        booking.status = 'completed';
+        await booking.save();
+
+        res.json(booking);
+    } catch (error) {
+        res.status(500).json({ message: 'Error completing booking' });
+    }
+};
+
+/**
+ * @swagger
+ * /api/bookings/completed:
+ *   get:
+ *     summary: Get all completed bookings for the authenticated vendor
+ *     description: |
+ *       Returns a list of all bookings with status `completed` that are assigned to the
+ *       currently authenticated vendor (Pandit). Each booking is populated with customer details,
+ *       puja details, and puja items batch. Results are sorted by most recent first.
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of completed bookings for the vendor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/Booking'
+ *                   - type: object
+ *                     properties:
+ *                       customer:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           firstName:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
+ *                           lastName:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
+ *                           phone:
+ *                             type: string
+ *                           city:
+ *                             type: string
+ *                       puja:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           name:
+ *                             type: object
+ *                             properties:
+ *                               en:
+ *                                 type: string
+ *                           image:
+ *                             type: string
+ *                           durationMinutes:
+ *                             type: number
+ *                           basePrice:
+ *                             type: number
+ *             example:
+ *               - _id: "64abc123def456789012abcd"
+ *                 customer:
+ *                   _id: "64cus123def456789012cust"
+ *                   firstName: { en: "Rajesh" }
+ *                   lastName: { en: "Kumar" }
+ *                   phone: "9876543210"
+ *                   city: "Hyderabad"
+ *                 vendor: "64ven123def456789012vend"
+ *                 puja:
+ *                   _id: "64puj123def456789012puja"
+ *                   name: { en: "Ganesh Puja" }
+ *                   image: "https://res.cloudinary.com/example/ganesh.jpg"
+ *                   durationMinutes: 120
+ *                   basePrice: 1000
+ *                 date: "2025-12-24"
+ *                 time: "09:00 AM - 11:00 AM"
+ *                 vendorFee: 500
+ *                 totalAmount: 1500
+ *                 status: "completed"
+ *                 paymentStatus: "paid"
+ *                 createdAt: "2025-12-20T10:00:00.000Z"
+ *                 updatedAt: "2025-12-24T11:00:00.000Z"
+ *       403:
+ *         description: Access denied — only vendors can access this endpoint
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Access denied"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Error fetching completed bookings"
+ */
+export const getCompletedBookings = async (req: AuthRequest, res: Response) => {
+    try {
+        const vendorId = req.user?.id || req.user?._id;
+
+        const completedBookings = await Booking.find({
+            vendor: vendorId,
+            status: 'completed',
+        })
+            .populate('customer', 'firstName lastName phone city')
+            .populate('puja', 'name image durationMinutes basePrice')
+            .populate('pujaItemsBatchId')
+            .sort({ updatedAt: -1 });
+
+        res.status(200).json(completedBookings);
+    } catch (error: any) {
+        res.status(500).json({ message: error?.message || 'Error fetching completed bookings' });
+    }
+};
